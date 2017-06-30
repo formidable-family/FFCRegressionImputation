@@ -9,6 +9,8 @@ To get started, in R:
 3. Run `yourDF <- fcc_imputation_init(data='location/ofyour.file')` (assigns output to new variable name of your choice)
 4. Run `yourImputedDF <- regression_imputation(yourDF)`
 
+You will end up with a dataframe of *predictions*, that will need to be overlayed the original dataset, depending on the kind of values you would like to replace. This script makes no assumptions about this, but some easy integrations to enable this are a todo. 
+
 ## Available options
 
 ### Initialization
@@ -34,4 +36,5 @@ To get started, in R:
 
 ## Todo
 
+- Implement actual imputation, based on some user defined preferences (e.g. only Don't Know or Refused answers, or valid Skips). 
 - Implement full information maximum likelihood. Lavaan has a good implementation, and scaffolding code is already in this repo, but lavaan does not currently support regression-type predictions, only for latent models. There is conversation for implementing this. See: https://github.com/yrosseel/lavaan/issues/44 for updates
