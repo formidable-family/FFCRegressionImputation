@@ -1,6 +1,6 @@
 # Regression-based Imputation
 
-Several predictive approaches to imputation using linear regressions, lasso and full imputation maximum likelihood for data in the Fragile Families Challenge. For more information on the challenge: fragilefamilieschallenge.org.
+Several predictive approaches to imputation using linear regressions and lasso based approach for data in the Fragile Families Challenge. For more information on the challenge: fragilefamilieschallenge.org.
 
 ## Tl;dr
 
@@ -32,3 +32,6 @@ To get started, in R:
 - `debug=0` Turn on if you would like to see models, warnings about lack of model convergence and performance of your models. (default:off)
 - `test=0` Turn on if you would like to run a trial with the first 4 variables (hard coded for now) instead of the full dataframe. Highly recommended (default:off)
 
+## Todo
+
+- Implement full information maximum likelihood. Lavaan has a good implementation, and scaffolding code is already in this repo, but lavaan does not currently support regression-type predictions, only for latent models. There is conversation for implementing this. See: https://github.com/yrosseel/lavaan/issues/44 for updates
