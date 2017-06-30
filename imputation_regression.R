@@ -14,7 +14,7 @@ regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=
 	library(dplyr)
 
 	#depends on Connor's highly modularized helper code 
-	source('code/imputation_helpers.R')
+	source('imputation_helpers.R')
 
 	#avoid loading everything under the sun if we don't need it
 	if (method == 'lavaan') {

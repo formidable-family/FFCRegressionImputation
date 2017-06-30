@@ -2,20 +2,33 @@
 
 library(zoo)
 
-message('Importing data...')
-#this directory and data needs to be created
-background <- read.csv('data/background.csv', stringsAsFactors=F)
+fcc_imputation_init <- function(dropna=1, ageimpute=1, meanimpute=1) {
 
-source('imputation_logical.R', echo=F)
+	message('Importing data...')
+	#this directory and data needs to be created
+	background <- read.csv('data/background.csv', stringsAsFactors=F)
 
-background_imputed <- logical_imputation(background)
+	message('Convert to numeric...')
+	background_numeric <- data.frame(sapply(background, as.numeric))
 
-message('drop missing')
-background_imputed[background_imputed < 0] <- NA
+	if(ageimpute == 1) {
+		source('imputation_logical.R', echo=F)
+		background_numeric <- logical_imputation(background_numeric)
+	}
 
-background_numeric <- data.frame(sapply(background_imputed, as.numeric))
+	if(dropna == 1) {
+		message('Drop missing data...')
+		background_numeric[background_numeric < 0] <- NA	
+	}
 
-message('impute means')
-background_mean <- na.aggregate(background_numeric)
+	if(meanimpute ==1) {
+		message('Impute means...')
+		background_numeric <- na.aggregate(background_numeric)
+	}
 
-source('imputation_regression.R')
+	source('imputation_regression.R')
+	message('Ready!')
+
+	return(background_numeric)
+
+}
