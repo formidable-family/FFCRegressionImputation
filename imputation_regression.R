@@ -33,19 +33,21 @@ get_no_variance_vars <- function(data, variance_threshold = 0) {
 
 regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=0.4,top_predictors=3, constructed=1,debug=0, test=0) {
 
-	#depends on Connor's highly modularized helper code 
-	source('imputation_helpers.R')
-
 	#avoid loading everything under the sun if we don't need it
-	if (method == 'lavaan') {
-		library(lavaan)
-	} else if (method == 'polywog') {
+	#if (method == 'lavaan') {
+	#	library(lavaan)
+	#} else 
+	if (method == 'polywog') {
 		library(polywog)
+		message('Using polywog...')
+	} else {
+		message('Using lm...')
 	}
 
 	if (parallel == 1) {
 		library(parallel)
 		library(doMC)
+		message('Enabling parallelization')
 	}
 
 	#just grabs name of this file to be able to display in error messages
@@ -91,7 +93,7 @@ regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=
 			#find column index of column names passed into function 
 			col <- as.numeric(which(colnames(df)==column))
 
-			message(paste("running variable", col, column, "..."))
+			if(debug==1) { message(paste("running variable", col, column, "...")) }
 
 			#for each column in df (processed in ways described above, not original input df)
 			for (i in 1:ncol(df)) {
@@ -129,9 +131,9 @@ regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=
 			#pick the top as set in preferences (default = 3)
 
 			if (nrow(bestpredictors) > 0) {
-				top <- bestpredictors %>%
+				top <- suppressMessages(bestpredictors %>%
 					arrange(desc(correlation)) %>%
-					top_n(top_predictors)
+					top_n(top_predictors))
 
 				#construct formula with best predictors as independent and our variable of interest (column) as dependent
 				formula <- paste(column, ' ~ ', paste(top$names, collapse=" + "))
@@ -143,7 +145,6 @@ regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=
 
 					#if polywog flag is set
 					if (method == 'polywog') {
-						print('using polywog...')
 						model_fit <- polywog(model, data=df, degree = 1)
 						prediction <- predict(model_fit, df, type='response')
 						#try to return some prediction 
@@ -161,7 +162,6 @@ regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=
 
 					#default to lm - fastest
 					} else {
-						print('using lm...')
 						lm_fit <- lm(model, data=df)	
 						#print(summary(model_fit))	
 						#new[,column] <- data.frame(rep(0, nrow(df)))
@@ -194,6 +194,7 @@ regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=
 		} # end of impute function
 
 		if(test == 1) {
+			message('Running in test mode')
 			columnstorun <- out_numeric[,1:4]
 		} else {
 			columnstorun <- out_numeric
@@ -208,7 +209,7 @@ regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=
 		#run in sequence = off
 		} else {
 				final <- sapply(colnames(columnstorun), function(x) impute(x, out_numeric))
-				final <- data.frame(do.call(cbind, final))
+				final <- data.frame(final)
 				return(final)
 		}
 
