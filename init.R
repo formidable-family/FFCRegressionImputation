@@ -2,16 +2,23 @@
 
 library(zoo)
 
-fcc_imputation_init <- function(dropna=1, ageimpute=1, meanimpute=1) {
+imputation_ffc_init <- function(data='',dropna=1, ageimpute=1, meanimpute=1) {
 
 	message('Importing data...')
 	#this directory and data needs to be created
-	background <- read.csv('data/background.csv', stringsAsFactors=F)
+	result = tryCatch({
+		background <- read.csv(data, stringsAsFactors=F)
+
+	}, error = function(e) {
+	    stop(message("Please enter the location of your background.csv data file!"))
+	})
+
 
 	message('Convert to numeric...')
 	background_numeric <- data.frame(sapply(background, as.numeric))
 
 	if(ageimpute == 1) {
+		message('Run logical imputation...')
 		source('imputation_logical.R', echo=F)
 		background_numeric <- logical_imputation(background_numeric)
 	}
@@ -27,8 +34,9 @@ fcc_imputation_init <- function(dropna=1, ageimpute=1, meanimpute=1) {
 	}
 
 	source('imputation_regression.R')
-	message('Ready!')
 
 	return(background_numeric)
+
+	message('Ready!')
 
 }

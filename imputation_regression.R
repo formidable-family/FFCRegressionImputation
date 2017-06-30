@@ -7,11 +7,31 @@
 
 # Todo: better case logic instead of multiple if statements. 
 
-regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=0.4,top_predictors=3, constructed=1,debug=0, test=0) {
+#common dependencies
+library(psych)
+library(dplyr)
+require(stringr)
+require(tidyverse)
 
-	#common dependencies
-	library(psych)
-	library(dplyr)
+##
+## Two helper functions by @ccgilroy. Todo: repend on the rest of his code. 
+## 
+## drop variables with too many NAs
+get_na_vars <- function(data, non_na_responses = 0) {
+  na_info <- vapply(data, function(x) length(which(is.na(x))), numeric(1))
+  names(na_info[which(na_info >= max(na_info) - non_na_responses)])
+}
+
+## remove zero-variance variables
+get_no_variance_vars <- function(data, variance_threshold = 0) {
+  variance_info <- vapply(data, function(x) var(as.numeric(x), na.rm = TRUE), 
+                          numeric(1))
+  names(variance_info[which(variance_info <= variance_threshold)])
+}
+
+## Main imputation script
+
+regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=0.4,top_predictors=3, constructed=1,debug=0, test=0) {
 
 	#depends on Connor's highly modularized helper code 
 	source('imputation_helpers.R')

@@ -6,11 +6,11 @@
 #t5tint -> ct5tint
 #n5d2_age -> cn5d2_age
 
-logical_imputation <- function(df) {
+#dependencies
+library(dplyr)
+library(stringr)
 
-	#dependencies
-	library(dplyr)
-	library(stringr)
+logical_imputation <- function(df) {
 
 	#just grabs name of this file to be able to display in error messages
 	this.file <- (function() getSrcFilename(sys.call(sys.nframe())))()
