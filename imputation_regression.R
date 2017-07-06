@@ -14,7 +14,7 @@ require(stringr)
 require(tidyverse)
 
 ##
-## Two helper functions by @ccgilroy. Todo: repend on the rest of his code. 
+## Two helper functions by @ccgilroy. Todo: depend on the rest of his code. 
 ## 
 ## drop variables with too many NAs
 get_na_vars <- function(data, non_na_responses = 0) {
@@ -83,8 +83,7 @@ regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=
 		#get rid of columns with absolutely no variance
 		vars_no_variance <- get_no_variance_vars(no_nas,variance_threshold = 0)
 		out_numeric <- no_nas %>%
-					select(-one_of(vars_no_variance))
-		
+					select(-one_of(vars_no_variance))		
 
 		impute <- function(column, df) {
 
@@ -147,8 +146,10 @@ regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=
 					if (method == 'polywog') {
 						model_fit <- polywog(model, data=df, degree = 1)
 						prediction <- predict(model_fit, df, type='response')
+						imputed <- ifelse(is.na(df[,col]), prediction, df[,col])
 						#try to return some prediction 
-						return(prediction)
+						#return(prediction)
+						return(imputed)
 
 					#if lavaan flag is set -- not working for now, pending this feature being integrated in lavaan
 					#} else if (method == 'lavaan') {
@@ -166,8 +167,11 @@ regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=
 						#print(summary(model_fit))	
 						#new[,column] <- data.frame(rep(0, nrow(df)))
 						prediction <- predict(lm_fit, df, type='response')
+						imputed <- ifelse(is.na(df[,col]), prediction, df[,col])
+
 						#try to return some prediction 
-						return(prediction)
+						#return(prediction)
+						return(imputed)
 					}
 
 
@@ -175,26 +179,31 @@ regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=
 						#print information about our model quality and the model itself 
 						message(paste("Prediction quality for model:"), formula)
 						message(cor.test(df[,col],prediction))
-					} 
+					}
+
+
 
 				#if we can't get the model we want to run, throw an error and return column of NAs
 				}, error = function(e) {
 				    if(debug==1) { message(paste("Error in model", formula)) } 
-				    prediction <- as.vector(rep(NA,nrow(df)))
-				    return(prediction)
+				    #prediction <- as.vector(rep(NA,nrow(df)))
+				    unimputed <- as.vector(df[,col]) #return original unmodified variable column
+				    return(unimputed)
 				})
 
 			#if we have no good predictors, also return a column of NAs and throw an error if debug is on			
 			} else {
 				if(debug==1) { message(paste("No predictors for variable", column)) } 
-				prediction <- as.vector(rep(NA,nrow(df)))
-				return(prediction)
+				#prediction <- as.vector(rep(NA,nrow(df)))
+				unimputed <- as.vector(df[,col]) #return original unmodified variable column
+				return(unimputed)
 			}
 
 		} # end of impute function
 
 		if(test == 1) {
 			message('Running in test mode')
+			#columnstorun <- subset(out_numeric, select=c('cm4hhinc', 'cf4hhinc', 'cm5adult', 'cm1bsex'))
 			columnstorun <- out_numeric[,1:4]
 		} else {
 			columnstorun <- out_numeric
