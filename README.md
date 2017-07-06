@@ -9,7 +9,7 @@ To get started, in R:
 3. Run `yourDF <- fcc_imputation_init(data='location/ofyour.file')` (assigns output to new variable name of your choice)
 4. Run `yourImputedDF <- regression_imputation(yourDF)`
 
-You will end up with a dataframe of *predictions*, that will need to be overlayed the original dataset, depending on the kind of values you would like to replace. This script makes no assumptions about this, but some easy integrations to enable this are a todo. 
+You will end up with a dataframe of imputed values (either constructed only or the full data frame, depending on the options you specify), where an original value is missing, and original values where they exist. For example, if the dataset is missing data in the first case in househost income from mom's survey in wave 4 (cm4hhinc), but not cases 2 and 3, the function will only impute the first case, and return the original values for cases 2 and 3. 
 
 ## Available options
 
@@ -30,11 +30,10 @@ You will end up with a dataframe of *predictions*, that will need to be overlaye
 - `parallel=0` Parallelization option (using parallel package). Only for Mac OSX at the moment. Auto-detects number of cores. (default: off)
 - `threshold=0.4` Quality cut-off for building prediction models. Must be > 0 and < 1 (runs a correlation in the background). (default:0.4)
 - `top_predictors=3` How many predictors to use in each model. 3 is a sane default, you may want more if you want to try for more accuracy, or less if you find a lot of your variables do not have predictions. 
-- `constructed=1` Work only with about 320 valid constructed variables. Default is yes. Warning: setting this to 0 will cause very long runtime as will run on all columns of your data frame. 
+- `constructed=1` Work only with about 320 valid constructed variables. Default is yes. Warning: setting this to 0 will cause very long runtime as will run on all columns of the data frame you supply. 
 - `debug=0` Turn on if you would like to see models, warnings about lack of model convergence and performance of your models. (default:off)
 - `test=0` Turn on if you would like to run a trial with the first 4 variables (hard coded for now) instead of the full dataframe. Highly recommended (default:off)
 
 ## Todo
 
-- Implement actual imputation, based on some user defined preferences (e.g. only Don't Know or Refused answers, or valid Skips). 
 - Implement full information maximum likelihood. Lavaan has a good implementation, and scaffolding code is already in this repo, but lavaan does not currently support regression-type predictions, only for latent models. There is conversation for implementing this. See: https://github.com/yrosseel/lavaan/issues/44 for updates
