@@ -4,11 +4,13 @@
 \alias{imputation_ffc_init}
 \title{Data cleaning for logical and regression imputation}
 \usage{
-imputation_ffc_init(data = "", dropna = 1, ageimpute = 1,
+imputation_ffc_init(data = "", numeric = 1, dropna = 1, ageimpute = 1,
   meanimpute = 1)
 }
 \arguments{
 \item{data}{location of data file}
+
+\item{numeric}{convert all columns to numeric}
 
 \item{dropna}{whether to convert missing values to NA}
 

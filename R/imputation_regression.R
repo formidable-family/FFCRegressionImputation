@@ -89,11 +89,11 @@ regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=
 		
 		#get rid of columns with all NAs
 		vars_nas <- get_na_vars(reduced_df)
-		no_nas <- dplyr::select(reduced_df , -one_of(vars_nas))
+		no_nas <- dplyr::select(reduced_df , -dplyr::one_of(vars_nas))
 
 		#get rid of columns with absolutely no variance
 		vars_no_variance <- get_no_variance_vars(no_nas,variance_threshold = 0)
-		out_numeric <- dplyr::select(no_nas, -one_of(vars_no_variance))		
+		out_numeric <- dplyr::select(no_nas, -dplyr::one_of(vars_no_variance))		
 
 		impute <- function(column, input_df) {
 
@@ -141,7 +141,7 @@ regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=
 
 			if (nrow(bestpredictors) > 0) {
 				arranged <- suppressMessages(dplyr::arrange(bestpredictors,desc(correlation)))
-				top <- suppressMessages(top_n(arranged,top_predictors))
+				top <- suppressMessages(dplyr::top_n(arranged,top_predictors))
 					
 
 				#construct formula with best predictors as independent and our variable of interest (column) as dependent
@@ -224,13 +224,13 @@ regression_imputation <- function(dataframe, method='lm', parallel=0, threshold=
 				final <- parallel::mclapply(colnames(columnstorun), function(x) impute(x, out_numeric), mc.cores=parallel::detectCores())
 				final <- data.frame(do.call(cbind, final))
 				colnames(final) <- colnames(columnstorun)
-				merged <- cbind(challengeID=input_df$challengeID, final)
+				merged <- cbind(challengeID=dataframe$challengeID, final)
 				return(merged)
 		#run in sequence = off
 		} else {
 				final <- sapply(colnames(columnstorun), function(x) impute(x, out_numeric))
 				final <- data.frame(final)
-				merged <- cbind(challengeID=input_df$challengeID, final)
+				merged <- cbind(challengeID=dataframe$challengeID, final)
 				return(merged)
 		}
 
