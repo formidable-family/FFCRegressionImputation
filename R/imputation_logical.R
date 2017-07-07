@@ -1,38 +1,28 @@
-#Authors: Anna and Antje
-#Extrapolate values based on existing missing data in constructed values
-#assumes wide structure of input data frame -- takes in data frame of all variables from background file
+#internal use only
 
-#o5oint -> co5oint
-#t5tint -> ct5tint
-#n5d2_age -> cn5d2_age
-
-#dependencies
-library(dplyr)
-library(stringr)
-
-logical_imputation <- function(df) {
+logical_imputation <- function(input_df) {
 
 	#just grabs name of this file to be able to display in error messages
-	this.file <- (function() getSrcFilename(sys.call(sys.nframe())))()
+	this.file <- (function() utils::getSrcFilename(sys.call(sys.nframe())))()
 
-	#check that input is a df
-	if ("data.frame" %in% class(df)) {
+	#check that input is a input_df
+	if ("data.frame" %in% class(input_df)) {
 		
-		variables <- colnames(df)
+		variables <- colnames(input_df)
 
 		#these are actually constructed, but don't start with c, so renaming them
-		df$co5oint <- df$o5oint
-		df$ct5int <- df$t5tint
-		df$cn5d2_age <- df$n5d2_age
+		input_df$co5oint <- input_df$o5oint
+		input_df$ct5int <- input_df$t5tint
+		input_df$cn5d2_age <- input_df$n5d2_age
 
 		print("Generating refusalcount, dontknowcount, nacount...")
 
-		df$refusalcount <- rowSums(df==-1, na.rm=TRUE)
-		df$dontknowcount <- rowSums(df==-2, na.rm=TRUE)
-		df$nacount <- df$refusalcount + df$dontknowcount
+		input_df$refusalcount <- rowSums(input_df==-1, na.rm=TRUE)
+		input_df$dontknowcount <- rowSums(input_df==-2, na.rm=TRUE)
+		input_df$nacount <- input_df$refusalcount + input_df$dontknowcount
 
 		#find just constructed age variables
-		reduced_df <- data.frame(df[which(str_detect(variables, "^c[mf]{1}[12345]age$"))])
+		reduced_df <- data.frame(input_df[which(stringr::str_detect(variables, "^c[mf]{1}[12345]age$"))])
 
 		if (ncol(reduced_df) < 1) {
 			#break script if no matching columns found 
@@ -40,7 +30,7 @@ logical_imputation <- function(df) {
 			
 		}
 
-		reduced_df$challengeID <- df$challengeID
+		reduced_df$challengeID <- input_df$challengeID
 		#reduced_df$ID <- seq.int(nrow(reduced_df))
 		print("Running logical age imputation ... ")
 
@@ -153,9 +143,8 @@ logical_imputation <- function(df) {
 		reduced_df[reduced_df$challengeID == 4236,]$cm5age <- reduced_df[reduced_df$challengeID == 4236,]$cf1age - agedifference + 9
 
 		#actually perform the age imputations
-		out <- reduced_df %>%
-				rowwise() %>% 
-				mutate(cf1age_m=fixage(1,cf1age, cf2age, cf3age, cf4age, cf5age, cm1age, cm2age,cm3age,cm4age,cm5age),
+		rowwise <- dplyr::rowwise(reduced_df) 
+		out <- dplyr::mutate(rowwise, cf1age_m=fixage(1,cf1age, cf2age, cf3age, cf4age, cf5age, cm1age, cm2age,cm3age,cm4age,cm5age),
 				cf2age_m=fixage(2,cf1age, cf2age, cf3age, cf4age, cf5age, cm1age, cm2age,cm3age,cm4age,cm5age),
 				cf3age_m=fixage(3,cf1age, cf2age, cf3age, cf4age, cf5age, cm1age, cm2age,cm3age,cm4age,cm5age),
 				cf4age_m=fixage(4,cf1age, cf2age, cf3age, cf4age, cf5age, cm1age, cm2age,cm3age,cm4age,cm5age),
@@ -170,21 +159,21 @@ logical_imputation <- function(df) {
 				cf5age_m=fixage_m(5,cf1age_m, cf2age_m, cf3age_m, cf4age_m, cf5age_m),
 				)
 
-		#overwrite original df columns with our logically imputed values  
-		df$cf1age <- out$cf1age_m
-		df$cf2age <- out$cf2age_m
-		df$cf3age <- out$cf3age_m
-		df$cf4age <- out$cf4age_m
-		df$cf5age <- out$cf5age_m
-		df$cm2age <- out$cm2age_m
-		df$cm3age <- out$cm3age_m
-		df$cm4age <- out$cm4age_m
-		df$cm5age <- out$cm5age_m
+		#overwrite original input_df columns with our logically imputed values  
+		input_df$cf1age <- out$cf1age_m
+		input_df$cf2age <- out$cf2age_m
+		input_df$cf3age <- out$cf3age_m
+		input_df$cf4age <- out$cf4age_m
+		input_df$cf5age <- out$cf5age_m
+		input_df$cm2age <- out$cm2age_m
+		input_df$cm3age <- out$cm3age_m
+		input_df$cm4age <- out$cm4age_m
+		input_df$cm5age <- out$cm5age_m
 
 		print("Done with logical age imputation!")
 
 		#return the entire background data frame 
-		return(df)
+		return(input_df)
 		
 
 	} else {
