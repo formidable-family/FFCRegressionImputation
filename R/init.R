@@ -6,7 +6,7 @@
 #' @param numeric convert all columns to numeric
 #' @param dropna whether to convert missing values to NA
 #' @param ageimpute perform logical imputation of mothers and fathers age across waves
-#' @param meanimpute perform a mean imputation to help get better results from regression imputation
+#' @param meanimpute perform a mean imputation to help get better results from regression imputation; default off because regression imputation will perform this automatically. 
 #'
 #' @return Dataframe with same dimensions as input, entirely numeric
 #'
@@ -15,7 +15,7 @@
 #'
 #' @export
 
-imputation_ffc_init <- function(data='',numeric=1,dropna=1, ageimpute=1, meanimpute=1) {
+imputation_ffc_init <- function(data='',numeric=1,dropna=1, ageimpute=1, meanimpute=0) {
 
 	message('Importing data...')
 	#this directory and data needs to be created
@@ -26,7 +26,7 @@ imputation_ffc_init <- function(data='',numeric=1,dropna=1, ageimpute=1, meanimp
 	    stop(message("Please enter the location of your background.csv data file!"))
 	})
 
-	
+
 	logical_imputation <- function(input_df) {
 
 		#just grabs name of this file to be able to display in error messages
@@ -232,8 +232,6 @@ imputation_ffc_init <- function(data='',numeric=1,dropna=1, ageimpute=1, meanimp
 		message('Impute means...')
 		background_numeric <- zoo::na.aggregate(background_numeric)
 	}
-
-	#source('imputation_regression.R')
 
 	return(background_numeric)
 

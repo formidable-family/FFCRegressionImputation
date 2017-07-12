@@ -19,7 +19,7 @@ regression_imputation(dataframe, method = "lm", parallel = 0,
 
 \item{constructed}{whether to return only constructed variables, or any variables passed to function; warning: slow if running on full dataset.}
 
-\item{debug}{debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors.}
+\item{debug}{debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=errors and warnings, 2=errors, warnings and prediction quality.}
 
 \item{test}{test mode; runs on only the first 4 variables; helpful for trying out the function options before running full imputation.}
 }

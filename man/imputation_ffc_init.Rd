@@ -5,7 +5,7 @@
 \title{Data cleaning for logical and regression imputation}
 \usage{
 imputation_ffc_init(data = "", numeric = 1, dropna = 1, ageimpute = 1,
-  meanimpute = 1)
+  meanimpute = 0)
 }
 \arguments{
 \item{data}{location of data file}
@@ -16,7 +16,7 @@ imputation_ffc_init(data = "", numeric = 1, dropna = 1, ageimpute = 1,
 
 \item{ageimpute}{perform logical imputation of mothers and fathers age across waves}
 
-\item{meanimpute}{perform a mean imputation to help get better results from regression imputation}
+\item{meanimpute}{perform a mean imputation to help get better results from regression imputation; default off because regression imputation will perform this automatically.}
 }
 \value{
 Dataframe with same dimensions as input, entirely numeric
