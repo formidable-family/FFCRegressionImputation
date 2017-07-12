@@ -5,11 +5,17 @@ Several predictive approaches to imputation using linear regressions and lasso b
 ## Tl;dr
 
 To get started, in R:
-1. Load the initialization script: `source('init.R')`
-3. Run `yourDF <- fcc_imputation_init(data='location/ofyour.file')` (assigns output to new variable name of your choice)
-4. Run `yourImputedDF <- regression_imputation(yourDF)`
+1. Make sure "devtools" is installed and loaded:
+  - `library(devtools)`
+2. Install and load the package: 
+  - `devtools::install_github("annafil/FFCRegressionImputation")`
+  - `library(FFCRegressionImputation)`
+3. Run initial data cleaning and basic imputation (necessary for step 4 but can be used standalone):
+  - `yourDF <- fcc_imputation_init(data='location/ofyour.file')`
+4. Run regression imputation with (optional) preferences (see below for details):
+  - `yourImputedDF <- regression_imputation(yourDF, test=1, debug=1)`
 
-You will end up with a dataframe of imputed values (either constructed only or the full data frame, depending on the options you specify), where an original value is missing, and original values where they exist. For example, if the dataset is missing data in the first case in househost income from mom's survey in wave 4 (cm4hhinc), but not cases 2 and 3, the function will only impute the first case, and return the original values for cases 2 and 3. 
+Output is a dataframe of imputed values (either constructed only or the full data frame, depending on the options you specify), where an original value is missing, and original values where they exist. For example, if the dataset is missing data in the first case in househost income from mom's survey in wave 4 (cm4hhinc), but not cases 2 and 3, the function will only impute the first case, and return the original values for cases 2 and 3. 
 
 ## Available options
 
@@ -36,4 +42,4 @@ You will end up with a dataframe of imputed values (either constructed only or t
 
 ## Todo
 
-- Implement full information maximum likelihood. Lavaan has a good implementation, and scaffolding code is already in this repo, but lavaan does not currently support regression-type predictions, only for latent models. There is conversation for implementing this. See: https://github.com/yrosseel/lavaan/issues/44 for updates
+- Implement full information maximum likelihood. Lavaan has a good implementation, and scaffolding code is already in this repo, but lavaan does not currently support regression-type predictions, only for latent models. There is existing conversation on implementing this. See: https://github.com/yrosseel/lavaan/issues/44 for updates...
