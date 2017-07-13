@@ -15,7 +15,7 @@
 #'
 #' @export
 
-imputation_ffc_init <- function(data='',numeric=1,dropna=1, ageimpute=1, meanimpute=0) {
+initImputation <- function(data='',numeric=1,dropna=1, ageimpute=1, meanimpute=0) {
 
 	message('Importing data...')
 	#this directory and data needs to be created
