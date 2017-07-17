@@ -1,13 +1,13 @@
-#' Linear regression and lasso based imputation
+#' Correlation matrix to be used for regression based imputatoin
 #'
 #' Creates a dataframe with imputed values using either linear regression or lasso based models. For each variable in given data frame, the function finds the best correlated predictors (number of which is set by top_predictors), and uses these to construct models for predicting missing values. 
 #'
 #' @param varpattern A regular expression for subsetting variable names from input dataframe 
 #' @param parallel whether to use parallel processes (MacOS only, cores autodetected)
-#' @param debug debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=errors and warnings, 2=errors, warnings and prediction quality.
-#' @param test test mode; runs on only the first 4 variables; helpful for trying out the function options before running full imputation. 
+#' @param debug debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress notifications, errors and warnings.
+#' @param test test mode; runs on only the first 4 variables of a given dataframe; helpful for trying out the function options before running full correlation matrix.  
 #'
-#' @return Correlation matrix 
+#' @return a list of two objects: $corMatrix == the correlation matrix between all variables given in the input dataframe, $df ==  a filtered version of the dataframe, that removes columns with no variance and applies any regex filters given.
 #'
 #' @examples
 #' \dontrun{corMatrix(dataframe, varpattern="^c[mfhpktfvino]{1,2}[12345]", parallel=1, debug=1, test=1)}
@@ -46,14 +46,11 @@ corMatrix <- function(dataframe, varpattern="",debug=0, test=0, parallel = 0) {
 	  names(variance_info[which(variance_info <= variance_threshold)])
 	}
 
-	#just grabs name of this file to be able to display in error messages
-	this.file <- (function() utils::getSrcFilename(sys.call(sys.nframe())))()
-
 	#make sure input is a data frame
 	if ("data.frame" %in% class(dataframe)) {
 
 		#check if only constructed variables are requested (default: yes)
-		varpattern <- "^c[mfhpktfvino]{1,2}[12345]" #for testing
+		#varpattern <- "^c[mfhpktfvino]{1,2}[12345]" #for testing
 
 		if (stringr::str_length(varpattern) > 0) {
 
@@ -62,9 +59,8 @@ corMatrix <- function(dataframe, varpattern="",debug=0, test=0, parallel = 0) {
 
 			#stop script if no matching columns found 
 			if (ncol(reduced_df) < 1) {
-				stop(paste("Error: you asked for a selection of variables, but no matching variables were found.",
-					"Try changing the regex used, or supply a different dataframe.",
-					" Error in file:", this.file))
+				stop(paste("corMatrix error: you asked for a selection of variables, but no matching variables were found.",
+					"Try changing the regex used, or supply a different dataframe."))
 				
 			}
 

@@ -3,19 +3,18 @@
 #' Creates a dataframe with imputed values from 
 #'
 #' @param data location of data file
-#' @param numeric convert all columns to numeric
 #' @param dropna whether to convert missing values to NA
 #' @param ageimpute perform logical imputation of mothers and fathers age across waves
-#' @param meanimpute perform a mean imputation to help get better results from regression imputation; default off because regression imputation will perform this automatically. 
+#' @param meanimpute convert all input columns to numeric and perform a mean imputation to help get better results from regression imputation; default off because regression imputation will perform this automatically. 
 #'
 #' @return Dataframe with same dimensions as input, entirely numeric
 #'
 #' @examples
-#' \dontrun{imputation_ffc_init('background.csv', dropna=1, ageimpute=1, meanimpute=1)}
+#' \dontrun{initImputation('background.csv', dropna=1, ageimpute=1, meanimpute=1)}
 #'
 #' @export
 
-initImputation <- function(data='',numeric=1,dropna=1, ageimpute=1, meanimpute=0) {
+initImputation <- function(data='',dropna=1, ageimpute=1, meanimpute=0) {
 
 	message('Importing data...')
 	#this directory and data needs to be created
@@ -211,29 +210,30 @@ initImputation <- function(data='',numeric=1,dropna=1, ageimpute=1, meanimpute=0
 
 	}
 
-
-	if(ageimpute == 1) {
-		message('Convert to numeric...')
-		background_numeric <- data.frame(sapply(background, as.numeric))
-	}
-
-	if(ageimpute == 1) {
+	if(ageimpute == 1 | ageimpute==TRUE) {
 		message('Run logical imputation...')
 		#source('imputation_logical.R', echo=F)
-		background_numeric <- logical_imputation(background_numeric)
+		background <- logical_imputation(background)
 	}
 
-	if(dropna == 1) {
+
+	if(meanimpute ==1 | meanimpute==TRUE) {
+		dropna = 1
+		message('Convert to numeric...')
+		background <- data.frame(sapply(background, as.numeric))
+	}
+
+	if(dropna == 1 | dropna==TRUE) {
 		message('Drop missing data...')
-		background_numeric[background_numeric < 0] <- NA	
+		background[background < 0] <- NA	
 	}
 
-	if(meanimpute ==1) {
+	if(meanimpute ==1 | meanimpute==TRUE) {
 		message('Impute means...')
-		background_numeric <- zoo::na.aggregate(background_numeric)
+		background <- zoo::na.aggregate(background)
 	}
 
-	return(background_numeric)
+	return(background)
 
 	message('Ready!')
 

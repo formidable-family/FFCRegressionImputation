@@ -6,13 +6,13 @@
 #' @param parallel whether to use parallel processes
 #' @param threshold for selection of predictors based on correlation; values between 0 and 1.
 #' @param top_predictors how many predictors to use in imputation prediction; more values can lead to better quality but more sparsely available predictions.
-#' @param debug debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=errors and warnings, 2=errors, warnings and prediction quality.
+#' @param debug debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress, errors and warnings, 2=progress,errors, warnings and prediction quality.
 #' @param test test mode; runs on only the first 4 variables; helpful for trying out the function options before running full imputation. 
 #'
 #' @return Dataframe containing imputed variables, with imputations performed only on missing values and retaining original data where available.
 #'
 #' @examples
-#' \dontrun{regression_imputation(dataframe, method='polywog', varpattern="^c[mfhpktfvino]{1,2}[12345]", parallel=1, debug=1, test=1)}
+#' \dontrun{regImputation(dataframe, method='polywog', varpattern="^c[mfhpktfvino]{1,2}[12345]", parallel=1, debug=1, test=1)}
 #'
 #' @export
 
@@ -49,7 +49,8 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 	#make sure input is a data frame
 	if ("data.frame" %in% class(dataframe) & 'matrix' %in% class(matrix)) {
 	
-		out_imputed <- zoo::na.aggregate(dataframe)	#same shape as dataframe, but with means imputed	
+		out_numeric <- data.frame(sapply(dataframe, as.numeric)) #converts to numeric
+		out_imputed <- zoo::na.aggregate(out_numeric)	#same shape as dataframe, but with means imputed	
 		out_scaled <- data.frame(lapply(out_imputed, function(x) scale(x)))
 		#print(head(out_scaled,20))
 
@@ -93,8 +94,8 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 
 					#if polywog flag is set
 					if (method == 'polywog') {
+						print("aa")
 						model_fit <- polywog::polywog(model, data=imputed_df, degree = 1)
-						
 						if(debug>1) { 
 							message(paste("Polywog model fit:", formula))
 							print(summary(model_fit))
@@ -108,7 +109,7 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 						if(debug>1) { 
 							#print information about our model quality and the model itself 
 							message(paste("Prediction quality for model:", formula))
-							print(stats::cor.test(original_df[,col],prediction))
+							print(stats::cor.test(original_df[,col],prediction)$estimate)
 						}
 						#try to return some prediction 
 						#return(prediction)
@@ -175,17 +176,11 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 				final <- parallel::mclapply(colnames(columnstorun), function(x) impute(x, matrix, out_scaled, dataframe), mc.cores=parallel::detectCores(logical=FALSE))
 				final <- data.frame(do.call(cbind, final))
 				colnames(final) <- colnames(columnstorun)
-				#if("challengeID" %in% colnames(dataframe)) {
-				final <- cbind(challengeID=dataframe$challengeID, final)					
-				#}
 				return(final)
 		#run in sequence = off
 		} else {
 				final <- sapply(colnames(columnstorun), function(x) impute(x, matrix,out_scaled, dataframe))
 				final <- data.frame(final)
-				#if("challengeID" %in% colnames(dataframe)) {
-				final <- cbind(challengeID=dataframe$challengeID, final)					
-				#}
 				return(final)
 		}
 
