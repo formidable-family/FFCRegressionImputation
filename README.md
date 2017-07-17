@@ -39,7 +39,7 @@ The bulk of the resource intensive portion of this imputation is in computing a 
 
 `corMatrix(data='', varpattern='',debug=0, test=0, parallel = 0)`
 
-- `varpattern='[regularexpression]'` apply a regular expression to filter the data columns, and reduce size of matrix processed. Filtering the variables is optional but HIGHLY RECOMMENDED if you are working with the entire background.csv file. Example query for selecting only constructed variables (about 300 variables, runtime of 1 hour on a modern 4-core machine: `^c[mfhpktfvino]{1,2}[12345]`. 
+- `varpattern='[regularexpression]'` apply a regular expression to filter the data columns, and reduce size of matrix processed. Filtering the variables is optional but HIGHLY RECOMMENDED if you are working with the entire background.csv file. Example query for selecting only constructed variables (about 300 variables, runtime of 1 hour on a modern 4-core machine): `^c[mfhpktfvino]{1,2}[12345]`. 
 - `debug=0` shows which models are running, the quality of predictions relative to original data, and any model errors. Any value >= 1 will show progress notifications, errors and warnings.
 - `test=0` runs on only the first 4 variables of a given dataframe; helpful for trying out the function options before running full correlation matrix.  
 - `parallel=0` whether to attempt to parallelize for faster processing time (currently, for MacOSX only). 
