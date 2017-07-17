@@ -63,27 +63,28 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 		}
 
 		impute <- function(column, cors, imputed_df, original_df) {
+			if(debug>=1){message(paste('Running variable', column))}
 
 			col <- as.numeric(which(colnames(imputed_df)==column))
 
 			bestpredictors <- data.frame(correlation=cors[,column])
 			bestpredictors$names <- rownames(bestpredictors)
 
-			
 			filtered <- suppressMessages(dplyr::filter(bestpredictors, correlation >= threshold))
 			filtered <- suppressMessages(dplyr::filter(filtered, correlation < 1))
 
 			if (nrow(filtered) > 0) {
 
 				arranged <- suppressMessages(dplyr::arrange(filtered,desc(correlation)))
+
 				if (nrow(arranged) > top_predictors) {
-					top <- suppressMessages(dplyr::top_n(arranged,top_predictors))
+					top_values <- dplyr::top_n(arranged,top_predictors, correlation)
 				} else {
-					top <- arranged
+					top_values<- arranged
 				}
 
 				#construct formula with best predictors as independent and our variable of interest (column) as dependent
-				formula <- paste(column, ' ~ ', paste(top$names, collapse=" + "))
+				formula <- paste(column, ' ~ ', paste(top_values$names, collapse=" + "))
 				model <- stats::as.formula(formula)
 				#print(formula)
 				
@@ -174,17 +175,17 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 				final <- parallel::mclapply(colnames(columnstorun), function(x) impute(x, matrix, out_scaled, dataframe), mc.cores=parallel::detectCores(logical=FALSE))
 				final <- data.frame(do.call(cbind, final))
 				colnames(final) <- colnames(columnstorun)
-				if("challengeID" %in% colnames(dataframe)) {
-					final <- cbind(challengeID=dataframe$challengeID, final)					
-				}
+				#if("challengeID" %in% colnames(dataframe)) {
+				final <- cbind(challengeID=dataframe$challengeID, final)					
+				#}
 				return(final)
 		#run in sequence = off
 		} else {
 				final <- sapply(colnames(columnstorun), function(x) impute(x, matrix,out_scaled, dataframe))
 				final <- data.frame(final)
-				if("challengeID" %in% colnames(dataframe)) {
-					final <- cbind(challengeID=dataframe$challengeID, final)					
-				}
+				#if("challengeID" %in% colnames(dataframe)) {
+				final <- cbind(challengeID=dataframe$challengeID, final)					
+				#}
 				return(final)
 		}
 
