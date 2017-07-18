@@ -94,7 +94,7 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 
 					#if polywog flag is set
 					if (method == 'polywog') {
-						print("aa")
+						#print("aa")
 						model_fit <- polywog::polywog(model, data=imputed_df, degree = 1)
 						if(debug>1) { 
 							message(paste("Polywog model fit:", formula))
