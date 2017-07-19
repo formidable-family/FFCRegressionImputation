@@ -57,9 +57,10 @@ To restore the object:
 
 ### Regression Imputation 
 
-`regImpute(dataframe='', matrix='', method='lm', parallel=0, threshold=0.4,top_predictors=3, debug=0, test=0)`
+`regImpute(dataframe='', matrix='', method='lm', degree=1, parallel=0, threshold=0.4,top_predictors=3, debug=0, test=0)`
 
-- `method='lm'` Options: 'lm' (default) for OLS regression or 'polywog' for lasso-based prediction.
+- `method='lm'` Options: 'lm' (default) for OLS regression or 'lasso' for lasso-based prediction (uses the 'polywog' package).
+- `degree=1` Lasso only: The degree of polynomial effects to estimate: 1=main effects only, 2=quadratic, 3=cubic, etc.
 - `parallel=0` Parallelization option (using parallel package). Only for Mac OSX at the moment. Auto-detects number of cores. (default: off)
 - `threshold=0.4` Quality cut-off for building prediction models. Must be > 0 and < 1 (runs a correlation in the background). (default:0.4)
 - `top_predictors=3` How many predictors to use in each model. 3 is a sane default, you may want more if you want to try for more accuracy, or less if you find a lot of your variables do not have predictions. 
