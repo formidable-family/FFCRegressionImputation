@@ -5,12 +5,13 @@
 \title{Linear regression and lasso based imputation}
 \usage{
 regImputation(dataframe, matrix, method = "lm", parallel = 0,
-  threshold = 0.4, top_predictors = 3, debug = 0, test = 0)
+  threshold = 0.4, top_predictors = 3, debug = 0, test = 0,
+  degree = 1)
 }
 \arguments{
-\item{method}{method for imputation (\code{"lm"} or \code{"polywog"})}
+\item{method}{method for imputation (\code{"lm"} for ordinary least squares linear regression or \code{"lasso"} for lasso regularization)}
 
-\item{parallel}{whether to use parallel processes}
+\item{parallel}{whether to use parallel processes (for MacOSX only at the moment)}
 
 \item{threshold}{for selection of predictors based on correlation; values between 0 and 1.}
 
@@ -19,6 +20,8 @@ regImputation(dataframe, matrix, method = "lm", parallel = 0,
 \item{debug}{debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress, errors and warnings, 2=progress,errors, warnings and prediction quality.}
 
 \item{test}{test mode; runs on only the first 4 variables; helpful for trying out the function options before running full imputation.}
+
+\item{degree}{the degree of polynomial effects to estimate (1=main effects only, 2=quadratic, 3=cubic, etc.)}
 }
 \value{
 Dataframe containing imputed variables, with imputations performed only on missing values and retaining original data where available.

@@ -25,7 +25,7 @@
 regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=0.4,top_predictors=3, debug=0, test=0, degree=1) {
 
 	#avoid loading everything under the sun if we don't need it
-	if (method == 'polywog' or method=='lasso') {
+	if (method == 'polywog' | method=='lasso') {
 		message('Using polywog...')
 		if (!requireNamespace("polywog", quietly = TRUE)) {
 		  stop("Polywog package not found. Please install it.",
@@ -180,7 +180,7 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 				return(final)
 		#run in sequence = off
 		} else {
-				final <- sapply(colnames(columnstorun), function(x) impute(x, matrix,out_scaled, dataframe))
+				final <- sapply(colnames(columnstorun), function(x) impute(x, matrix, out_scaled, dataframe))
 				final <- data.frame(final)
 				return(final)
 		}
