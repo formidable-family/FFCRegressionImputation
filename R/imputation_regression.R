@@ -2,8 +2,9 @@
 #'
 #' Creates a dataframe with imputed values using either linear regression or lasso based models. For each variable in given data frame, the function finds the best correlated predictors (number of which is set by top_predictors), and uses these to construct models for predicting missing values. 
 #'
-#' @param method method for imputation (\code{"lm"} or \code{"polywog"})
-#' @param parallel whether to use parallel processes
+#' @param method method for imputation (\code{"lm"} for ordinary least squares linear regression or \code{"lasso"} for lasso regularization)
+#' @param degree the degree of polynomial effects to estimate (1=main effects only, 2=quadratic, 3=cubic, etc.)
+#' @param parallel whether to use parallel processes (for MacOSX only at the moment)
 #' @param threshold for selection of predictors based on correlation; values between 0 and 1.
 #' @param top_predictors how many predictors to use in imputation prediction; more values can lead to better quality but more sparsely available predictions.
 #' @param debug debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress, errors and warnings, 2=progress,errors, warnings and prediction quality.
@@ -21,10 +22,10 @@
 
 ## Main imputation script
 
-regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=0.4,top_predictors=3, debug=0, test=0) {
+regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=0.4,top_predictors=3, debug=0, test=0, degree=1) {
 
 	#avoid loading everything under the sun if we don't need it
-	if (method == 'polywog') {
+	if (method == 'polywog' or method=='lasso') {
 		message('Using polywog...')
 		if (!requireNamespace("polywog", quietly = TRUE)) {
 		  stop("Polywog package not found. Please install it.",
@@ -95,7 +96,7 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 					#if polywog flag is set
 					if (method == 'polywog') {
 						#print("aa")
-						model_fit <- polywog::polywog(model, data=imputed_df, degree = 1)
+						model_fit <- polywog::polywog(model, data=imputed_df, degree = degree)
 						if(debug>1) { 
 							message(paste("Polywog model fit:", formula))
 							print(summary(model_fit))
