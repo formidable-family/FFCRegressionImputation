@@ -4,16 +4,16 @@
 \alias{corMatrix}
 \title{Correlation matrix to be used for regression based imputatoin}
 \usage{
-corMatrix(dataframe, varpattern = "", debug = 0, test = 0, parallel = 0)
+corMatrix(dataframe, varpattern = "", debug = 0)
 }
 \arguments{
 \item{varpattern}{A regular expression for subsetting variable names from input dataframe}
 
 \item{debug}{debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress notifications, errors and warnings.}
 
-\item{test}{test mode; runs on only the first 4 variables of a given dataframe; helpful for trying out the function options before running full correlation matrix.}
-
 \item{parallel}{whether to use parallel processes (MacOS only, cores autodetected)}
+
+\item{test}{test mode; runs on only the first 4 variables of a given dataframe; helpful for trying out the function options before running full correlation matrix.}
 }
 \value{
 a list of two objects: $corMatrix == the correlation matrix between all variables given in the input dataframe, $df ==  a filtered version of the dataframe, that removes columns with no variance and applies any regex filters given.

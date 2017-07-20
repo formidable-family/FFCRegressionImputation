@@ -19,16 +19,7 @@
 
 ## Main imputation script
 
-corMatrix <- function(dataframe, varpattern="",debug=0, test=0, parallel = 0) {
-
-	if (parallel == 1) {
-		message('Enabling parallelization')
-		if (!requireNamespace("parallel", quietly = TRUE)) {
-		  stop("Parallel package not found. Please install it.",
-		    call. = FALSE)
-		}
-	}
-
+corMatrix <- function(dataframe, varpattern="",debug=0) {
 
 	##
 	## Two helper functions by @ccgilroy. Todo: depend on the rest of his code. 
@@ -68,91 +59,36 @@ corMatrix <- function(dataframe, varpattern="",debug=0, test=0, parallel = 0) {
 
 			reduced_df <- dataframe
 		}
-		
+
+		if ("challengeID" %in% colnames(reduced_df)) {
+			reduced_df <- dplyr::select(reduced_df, -challengeID)
+		}
+
 		#get rid of columns with all NAs
 		vars_nas <- get_na_vars(reduced_df)
 		no_nas <- dplyr::select(reduced_df , -dplyr::one_of(vars_nas))
 
 		#get rid of columns with absolutely no variance
 		vars_no_variance <- get_no_variance_vars(no_nas,variance_threshold = 0)
-		out_noID <- dplyr::select(no_nas, -challengeID)
 
-		out_numeric <- dplyr::select(out_noID, -dplyr::one_of(vars_no_variance))
-		#out_imputed <- zoo::na.aggregate(out_numeric)	#same shape as out_numeric, but with means imputed	
-		#out_scaled <- data.frame(lapply(out_imputed, function(x) scale(x)))
-		#print(head(out_scaled,20))
+		out_novar <- dplyr::select(no_nas, -dplyr::one_of(vars_no_variance))
+		out_numeric <- data.frame(sapply(out_novar, as.numeric))
+		out_imputed <- zoo::na.aggregate(out_numeric)	#same shape as out_numeric, but with means imputed	
 
+		deviations <-  data.frame(sapply(out_imputed, function(x) scale(x, scale = FALSE)))
+		deviations <- as.matrix(deviations)
+		product <- Matrix::crossprod(deviations)
 
+		x2 <- deviations**2
+		x2sum <- as.matrix(colSums(x2))
+		y2sum <- t(x2sum)
 
-		if(test == 1) {
-			message('Running in test mode')
-			columnstorun <- subset(out_numeric, select=c('cm4hhinc', 'cf4hhinc', 'cm5adult', 'cm1bsex'))
-			#columnstorun <- out_numeric[,1:4]
-		} else {
-			columnstorun <- out_numeric
-		}
+		product2 <- x2sum%*%y2sum
 
+		sqrt <- sqrt(product2)
+		output <- product/sqrt
 
-		getCorMatrix <- function(column, input_df) {
-			correlations <- matrix(NA, nrow=ncol(input_df), ncol=1)
-			rownames(correlations) <- colnames(input_df)
-			#find column index of column names passed into function 
-			col <- as.numeric(which(colnames(input_df)==column))
-
-			if(debug>=1) { message(paste("running variable", col, column, "...")) }
-
-			#for each column in input_df (processed in ways described above, not original input input_df)
-			for (i in 1:ncol(input_df)) {
-
-				#we will try to impute this 
-				var1 <- input_df[,col]
-				#the variable we will correlate with variable we are trying to predict
-				var2 <- input_df[,i]
-				name <- colnames(input_df)[i]
-				#for each remaining variable, make sure its not the same as the column we are predicting 
-				if (!i == col) {
-
-					#print(column, name)
-
-					#error handling -- make sure correlation test can run, otherwise spit out names of offending variables
-					result = tryCatch({
-					    cor <- psych::corFiml(cbind(var1, var2))[1,2]
-					    correlations[name,1] <- abs(cor)
-
-
-					}, error = function(e) {
-					    #complain only if debug is set to 1, otherwise silently move on to next pair 
-					    if(debug>=1) {
-					    message(paste(column, "and", name, "don't seem to play well together"))
-						}
-						correlations[name,1] <- NA
-					})
-			
-				} else {
-					correlations[name,1] <- 1
-				}
-				#end if
-			} #end getCorMatrix 	
-		
-			return(correlations)
-		}
-
-		#if parallelization option is set 
-		if (parallel == 1) {
-				final <- parallel::mclapply(colnames(columnstorun), function(x) getCorMatrix(x, out_numeric), mc.cores=parallel::detectCores(logical=FALSE))
-				final <- as.matrix(do.call(cbind, final))
-				colnames(final) <- colnames(columnstorun)
-				rownames(final) <- colnames(columnstorun)
-				object <- list(corMatrix = final, df = columnstorun)
-				return(object)
-		#run in sequence = off
-		} else {
-				final <- sapply(colnames(columnstorun), function(x) getCorMatrix(x, out_numeric))
-				final <- as.matrix(final)
-				object <- list(corMatrix = final, df = columnstorun)
-				return(object)
-		}
-
+		return(output)
 
 
 	#if we don't find a data frame, throw an error and quit. Boo! 
