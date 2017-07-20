@@ -179,6 +179,7 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 		#if parallelization option is set 
 		if (parallel == 1) {
 				final <- parallel::mclapply(colnames(columnstorun), function(x) impute(x, matrix, out_scaled, dataframe), mc.cores=parallel::detectCores(logical=FALSE))
+				if(debug>=1) { message("Assembling predictions...") } 
 				final <- data.frame(do.call(cbind, final))
 				colnames(final) <- colnames(columnstorun)
 				return(final)
