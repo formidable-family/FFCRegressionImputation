@@ -75,10 +75,14 @@ corMatrix <- function(dataframe, varpattern="",debug=0, test=0, parallel = 0) {
 
 		#get rid of columns with absolutely no variance
 		vars_no_variance <- get_no_variance_vars(no_nas,variance_threshold = 0)
-		out_numeric <- dplyr::select(no_nas, -dplyr::one_of(vars_no_variance))
+		out_noID <- dplyr::select(no_nas, -challengeID)
+
+		out_numeric <- dplyr::select(out_noID, -dplyr::one_of(vars_no_variance))
 		#out_imputed <- zoo::na.aggregate(out_numeric)	#same shape as out_numeric, but with means imputed	
 		#out_scaled <- data.frame(lapply(out_imputed, function(x) scale(x)))
 		#print(head(out_scaled,20))
+
+
 
 		if(test == 1) {
 			message('Running in test mode')
@@ -127,8 +131,7 @@ corMatrix <- function(dataframe, varpattern="",debug=0, test=0, parallel = 0) {
 				} else {
 					correlations[name,1] <- 1
 				}
-				#end if  
-
+				#end if
 			} #end getCorMatrix 	
 		
 			return(correlations)
@@ -136,7 +139,7 @@ corMatrix <- function(dataframe, varpattern="",debug=0, test=0, parallel = 0) {
 
 		#if parallelization option is set 
 		if (parallel == 1) {
-				final <- parallel::mclapply(colnames(columnstorun), function(x) getCorMatrix(x, columnstorun), mc.cores=parallel::detectCores(logical=FALSE))
+				final <- parallel::mclapply(colnames(columnstorun), function(x) getCorMatrix(x, out_numeric), mc.cores=parallel::detectCores(logical=FALSE))
 				final <- as.matrix(do.call(cbind, final))
 				colnames(final) <- colnames(columnstorun)
 				rownames(final) <- colnames(columnstorun)
@@ -144,7 +147,7 @@ corMatrix <- function(dataframe, varpattern="",debug=0, test=0, parallel = 0) {
 				return(object)
 		#run in sequence = off
 		} else {
-				final <- sapply(colnames(columnstorun), function(x) getCorMatrix(x, columnstorun))
+				final <- sapply(colnames(columnstorun), function(x) getCorMatrix(x, out_numeric))
 				final <- as.matrix(final)
 				object <- list(corMatrix = final, df = columnstorun)
 				return(object)

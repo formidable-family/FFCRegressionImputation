@@ -49,9 +49,13 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 
 	#make sure input is a data frame
 	if ("data.frame" %in% class(dataframe) & 'matrix' %in% class(matrix)) {
-	
+
+
+		if(debug>=1){message('Converting dataframe to numeric...')}
 		out_numeric <- data.frame(sapply(dataframe, as.numeric)) #converts to numeric
-		out_imputed <- zoo::na.aggregate(out_numeric)	#same shape as dataframe, but with means imputed	
+		if(debug>=1){message('Imputing means...')}
+		out_imputed <- zoo::na.aggregate(out_numeric)	#same shape as dataframe, but with means imputed
+		if(debug>=1){message('Scaling...')}	
 		out_scaled <- data.frame(lapply(out_imputed, function(x) scale(x)))
 		#print(head(out_scaled,20))
 
@@ -94,7 +98,7 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 				result = tryCatch({
 
 					#if polywog flag is set
-					if (method == 'polywog') {
+					if (method == 'polywog' | method=='lasso') {
 						#print("aa")
 						model_fit <- polywog::polywog(model, data=imputed_df, degree = degree)
 						if(debug>1) { 

@@ -224,7 +224,7 @@ initImputation <- function(data='',dropna=1, ageimpute=1, meanimpute=0) {
 	}
 
 	if(dropna == 1 | dropna==TRUE) {
-		message('Drop missing data...')
+		message('Convert missing data to NAs...')
 		background[background < 0] <- NA	
 	}
 
