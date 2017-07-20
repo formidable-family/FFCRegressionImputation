@@ -21,6 +21,8 @@ See below for options to customize each function.
 
 Final output is a dataframe of imputed values (either constructed only or the full data frame, depending on the options you specify), where an original value is missing, and original values where they exist. For example, if the dataset is missing data in the first case in househost income from mom's survey in wave 4 (cm4hhinc), but not cases 2 and 3, the function will only impute the first case, and return the original values for cases 2 and 3. 
 
+*Note: This software is still under development, so it's possible things may not work exactly as they should. If you encounter a problem, please help by submitting an issue on this project page.*
+
 ## Available options
 
 ### Initialization
