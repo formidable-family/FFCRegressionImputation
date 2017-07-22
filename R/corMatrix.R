@@ -3,14 +3,14 @@
 #' Creates a dataframe with imputed values using either linear regression or lasso based models. For each variable in given data frame, the function finds the best correlated predictors (number of which is set by top_predictors), and uses these to construct models for predicting missing values. 
 #'
 #' @param varpattern A regular expression for subsetting variable names from input dataframe 
-#' @param parallel whether to use parallel processes (MacOS only, cores autodetected)
+#' @param parallel (deprecated) 
 #' @param debug debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress notifications, errors and warnings.
-#' @param test test mode; runs on only the first 4 variables of a given dataframe; helpful for trying out the function options before running full correlation matrix.  
+#' @param test (deprecated)
 #'
 #' @return a list of two objects: $corMatrix == the correlation matrix between all variables given in the input dataframe, $df ==  a filtered version of the dataframe, that removes columns with no variance and applies any regex filters given.
 #'
 #' @examples
-#' \dontrun{corMatrix(dataframe, varpattern="^c[mfhpktfvino]{1,2}[12345]", parallel=1, debug=1, test=1)}
+#' \dontrun{corMatrix(dataframe, varpattern="^c[mfhpktfvino]{1,2}[12345]", debug=1)}
 #'
 #' @export
 
@@ -19,7 +19,7 @@
 
 ## Main imputation script
 
-corMatrix <- function(dataframe, varpattern="",debug=0) {
+corMatrix <- function(dataframe, varpattern="",debug=0, test=1, parallel=0) {
 
 	##
 	## Two helper functions by @ccgilroy. Todo: depend on the rest of his code. 
@@ -32,9 +32,17 @@ corMatrix <- function(dataframe, varpattern="",debug=0) {
 
 	## remove zero-variance variables
 	get_no_variance_vars <- function(data, variance_threshold = 0) {
-	  variance_info <- vapply(data, function(x) stats::var(as.numeric(x), na.rm = TRUE), 
+	  variance_info <- vapply(data, function(x) stats::var(suppressWarnings(as.numeric(x)), na.rm = TRUE), 
 	                          numeric(1))
 	  names(variance_info[which(variance_info <= variance_threshold)])
+	}
+
+	if (test ==1) {
+		message('Test mode is now deprecated because of significantly improved run-time. Operations will be performed on entire input dataframe.')
+	}
+
+	if (parallel ==1) {
+		message('Parallel mode is now deprecated because the code now performs matrix multiplications, significantly improving runtime.')
 	}
 
 	#make sure input is a data frame
@@ -72,23 +80,31 @@ corMatrix <- function(dataframe, varpattern="",debug=0) {
 		vars_no_variance <- get_no_variance_vars(no_nas,variance_threshold = 0)
 
 		out_novar <- dplyr::select(no_nas, -dplyr::one_of(vars_no_variance))
-		out_numeric <- data.frame(sapply(out_novar, as.numeric))
+
+		if(debug>=1){message('Preparing dataframe for computation...')}
+		out_numeric <- data.frame(suppressWarnings(sapply(out_novar, as.numeric)))
 		out_imputed <- zoo::na.aggregate(out_numeric)	#same shape as out_numeric, but with means imputed	
 
 		deviations <-  data.frame(sapply(out_imputed, function(x) scale(x, scale = FALSE)))
 		deviations <- as.matrix(deviations)
+
+		if(debug>=1){message('Calculating correlation matrix...')}
+
 		product <- Matrix::crossprod(deviations)
 
 		x2 <- deviations**2
 		x2sum <- as.matrix(colSums(x2))
 		y2sum <- t(x2sum)
 
+
 		product2 <- x2sum%*%y2sum
 
 		sqrt <- sqrt(product2)
 		output <- product/sqrt
 
-		return(output)
+		if(debug>=1){message('Done!')}
+
+		return(round(output,3))
 
 
 	#if we don't find a data frame, throw an error and quit. Boo! 

@@ -22,7 +22,7 @@
 
 ## Main imputation script
 
-regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=0.4,top_predictors=3, debug=0, test=0, degree=1) {
+regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=0.4,top_predictors=3, debug=0, degree=1, test=1) {
 
 	#avoid loading everything under the sun if we don't need it
 	if (method == 'polywog' | method=='lasso') {
@@ -50,23 +50,21 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 	#make sure input is a data frame
 	if ("data.frame" %in% class(dataframe) & 'matrix' %in% class(matrix)) {
 
+		result = tryCatch({
+			if(debug>=1){message('Subsetting dataframe to match correlation matrix...')}
+			reduced_df <- dplyr::select(dataframe, dplyr::one_of(colnames(matrix)))
+		}, error = function(e) {
+			stop("Failed to match correlation matrix variables to input data frame.\nCheck that input data frame has (at least) all the columns specified in the input matrix.\nYou can give this function a dataframe with more variables than specified in the correlation matrix, but not less.")
+		})
 
-		if(debug>=1){message('Converting dataframe to numeric...')}
-		out_numeric <- data.frame(sapply(dataframe, as.numeric)) #converts to numeric
-		if(debug>=1){message('Imputing means...')}
+
+		if(debug>=1){message('Preparing dataframe for computation [1]...')}
+		out_numeric <- data.frame(suppressWarnings(sapply(reduced_df, as.numeric))) #converts to numeric
+		if(debug>=1){message('Preparing dataframe for computation [2]...')}
 		out_imputed <- zoo::na.aggregate(out_numeric)	#same shape as dataframe, but with means imputed
-		if(debug>=1){message('Scaling...')}	
+		if(debug>=1){message('Preparing dataframe for computation [3]...')}
 		out_scaled <- data.frame(lapply(out_imputed, function(x) scale(x)))
 		#print(head(out_scaled,20))
-
-
-		if(test == 1) {
-			message('Running in test mode')
-			columnstorun <- subset(out_scaled, select=c('cm4hhinc', 'cf4hhinc', 'cm5adult', 'cm1bsex'))
-			#columnstorun <- original_df[,1:4]
-		} else {
-			columnstorun <- out_scaled
-		}
 
 		impute <- function(column, cors, imputed_df, original_df) {
 			if(debug>=1){message(paste('Running variable', column))}
@@ -175,17 +173,21 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 
 		} # end of impute function
 
-
+		if(test==1) {
+			colstorun <- subset(out_scaled, select=c('cm4hhinc', 'cf4hhinc', 'cm1kids', 'cf3adult'))
+		} else {
+			colstorun <- out_scaled
+		}
 		#if parallelization option is set 
 		if (parallel == 1) {
-				final <- parallel::mclapply(colnames(columnstorun), function(x) impute(x, matrix, out_scaled, dataframe), mc.cores=parallel::detectCores(logical=FALSE))
+				final <- parallel::mclapply(colnames(colstorun), function(x) impute(x, matrix, out_scaled, out_numeric), mc.cores=parallel::detectCores(logical=FALSE))
 				if(debug>=1) { message("Assembling predictions...") } 
 				final <- data.frame(do.call(cbind, final))
-				colnames(final) <- colnames(columnstorun)
+				colnames(final) <- colnames(colstorun)
 				return(final)
 		#run in sequence = off
 		} else {
-				final <- sapply(colnames(columnstorun), function(x) impute(x, matrix, out_scaled, dataframe))
+				final <- sapply(colnames(colstorun), function(x) impute(x, matrix, out_scaled, out_numeric))
 				final <- data.frame(final)
 				return(final)
 		}

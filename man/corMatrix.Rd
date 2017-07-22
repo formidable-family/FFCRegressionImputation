@@ -4,16 +4,16 @@
 \alias{corMatrix}
 \title{Correlation matrix to be used for regression based imputatoin}
 \usage{
-corMatrix(dataframe, varpattern = "", debug = 0)
+corMatrix(dataframe, varpattern = "", debug = 0, test = 1, parallel = 0)
 }
 \arguments{
 \item{varpattern}{A regular expression for subsetting variable names from input dataframe}
 
 \item{debug}{debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress notifications, errors and warnings.}
 
-\item{parallel}{whether to use parallel processes (MacOS only, cores autodetected)}
+\item{test}{(deprecated)}
 
-\item{test}{test mode; runs on only the first 4 variables of a given dataframe; helpful for trying out the function options before running full correlation matrix.}
+\item{parallel}{(deprecated)}
 }
 \value{
 a list of two objects: $corMatrix == the correlation matrix between all variables given in the input dataframe, $df ==  a filtered version of the dataframe, that removes columns with no variance and applies any regex filters given.
@@ -22,6 +22,6 @@ a list of two objects: $corMatrix == the correlation matrix between all variable
 Creates a dataframe with imputed values using either linear regression or lasso based models. For each variable in given data frame, the function finds the best correlated predictors (number of which is set by top_predictors), and uses these to construct models for predicting missing values.
 }
 \examples{
-\dontrun{corMatrix(dataframe, varpattern="^c[mfhpktfvino]{1,2}[12345]", parallel=1, debug=1, test=1)}
+\dontrun{corMatrix(dataframe, varpattern="^c[mfhpktfvino]{1,2}[12345]", debug=1)}
 
 }
