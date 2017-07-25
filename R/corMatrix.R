@@ -2,11 +2,11 @@
 #'
 #' Creates a dataframe with imputed values using either linear regression or lasso based models. For each variable in given data frame, the function finds the best correlated predictors (number of which is set by top_predictors), and uses these to construct models for predicting missing values. 
 #'
-#' @param dataframe (Required) An input dataframe you would like a correlation matrix for. 
-#' @param continuous (Optional) A character vector containing variable names that should be treated as continuous. 
-#' @param categorical (Optional) A character vector containing variable names that should be treated as categorical. 
-#' @param varpattern A regular expression for subsetting variable names from input dataframe. 
-#' @param parallel (deprecated) 
+#' @param dataframe (Required) An input dataframe you would like a correlation matrix for.
+#' @param continuous (Optional) A character vector containing variable names that should be treated as continuous.
+#' @param categorical (Optional) A character vector containing variable names that should be treated as categorical.
+#' @param varpattern A regular expression for subsetting variable names from input dataframe.
+#' @param parallel (deprecated)
 #' @param test (deprecated)
 #' @param debug Debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress notifications, errors and warnings.
 #'

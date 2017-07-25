@@ -30,6 +30,6 @@ Dataframe containing imputed variables, with imputations performed only on missi
 Creates a dataframe with imputed values using either linear regression or lasso based models. For each variable in given data frame, the function finds the best correlated predictors (number of which is set by top_predictors), and uses these to construct models for predicting missing values.
 }
 \examples{
-\dontrun{regImputation(dataframe, method='polywog', varpattern="^c[mfhpktfvino]{1,2}[12345]", parallel=1, debug=1, test=1)}
+\dontrun{regImputation(dataframe, matrix, method='polywog', parallel=1, debug=1, test=1)}
 
 }
