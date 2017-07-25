@@ -2,33 +2,25 @@
 #'
 #' Creates a dataframe with imputed values using either linear regression or lasso based models. For each variable in given data frame, the function finds the best correlated predictors (number of which is set by top_predictors), and uses these to construct models for predicting missing values. 
 #'
-#' @param varpattern A regular expression for subsetting variable names from input dataframe 
-#' @param parallel whether to use parallel processes (MacOS only, cores autodetected)
-#' @param debug debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress notifications, errors and warnings.
-#' @param test test mode; runs on only the first 4 variables of a given dataframe; helpful for trying out the function options before running full correlation matrix.  
+#' @param dataframe (Required) An input dataframe you would like a correlation matrix for.
+#' @param continuous (Optional) A character vector containing variable names that should be treated as continuous.
+#' @param categorical (Optional) A character vector containing variable names that should be treated as categorical.
+#' @param varpattern A regular expression for subsetting variable names from input dataframe.
+#' @param parallel (deprecated)
+#' @param test (deprecated)
+#' @param debug Debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress notifications, errors and warnings.
 #'
-#' @return a list of two objects: $corMatrix == the correlation matrix between all variables given in the input dataframe, $df ==  a filtered version of the dataframe, that removes columns with no variance and applies any regex filters given.
+#' @return A correlation matrix between all variables given in the input dataframe after removing columns with no variance and applying any regex filters given.
 #'
 #' @examples
-#' \dontrun{corMatrix(dataframe, varpattern="^c[mfhpktfvino]{1,2}[12345]", parallel=1, debug=1, test=1)}
+#' \dontrun{corMatrix(dataframe, varpattern="^c[mfhpktfvino]{1,2}[12345]", debug=1)}
 #'
 #' @export
-
-# Todo: better case logic instead of multiple if statements. 
 
 
 ## Main imputation script
 
-corMatrix <- function(dataframe, varpattern="",debug=0, test=0, parallel = 0) {
-
-	if (parallel == 1) {
-		message('Enabling parallelization')
-		if (!requireNamespace("parallel", quietly = TRUE)) {
-		  stop("Parallel package not found. Please install it.",
-		    call. = FALSE)
-		}
-	}
-
+corMatrix <- function(dataframe='', continuous='', categorical='', varpattern="",debug=0, test=0, parallel=0) {
 
 	##
 	## Two helper functions by @ccgilroy. Todo: depend on the rest of his code. 
@@ -41,9 +33,18 @@ corMatrix <- function(dataframe, varpattern="",debug=0, test=0, parallel = 0) {
 
 	## remove zero-variance variables
 	get_no_variance_vars <- function(data, variance_threshold = 0) {
-	  variance_info <- vapply(data, function(x) stats::var(as.numeric(x), na.rm = TRUE), 
+	  variance_info <- vapply(data, function(x) stats::var(suppressWarnings(as.numeric(x)), na.rm = TRUE), 
 	                          numeric(1))
 	  names(variance_info[which(variance_info <= variance_threshold)])
+	}
+
+
+	if (test ==1) {
+		message('Test mode is now deprecated because of significantly improved run-time. Operations will be performed on entire input dataframe.')
+	}
+
+	if (parallel ==1) {
+		message('Parallel mode is now deprecated because the code now performs matrix multiplications, significantly improving runtime.')
 	}
 
 	#make sure input is a data frame
@@ -68,91 +69,77 @@ corMatrix <- function(dataframe, varpattern="",debug=0, test=0, parallel = 0) {
 
 			reduced_df <- dataframe
 		}
-		
+
+		if ("challengeID" %in% colnames(reduced_df)) {
+			reduced_df <- dplyr::select(reduced_df, -challengeID)
+		}
+
 		#get rid of columns with all NAs
 		vars_nas <- get_na_vars(reduced_df)
 		no_nas <- dplyr::select(reduced_df , -dplyr::one_of(vars_nas))
 
 		#get rid of columns with absolutely no variance
 		vars_no_variance <- get_no_variance_vars(no_nas,variance_threshold = 0)
-		out_noID <- dplyr::select(no_nas, -challengeID)
 
-		out_numeric <- dplyr::select(out_noID, -dplyr::one_of(vars_no_variance))
-		#out_imputed <- zoo::na.aggregate(out_numeric)	#same shape as out_numeric, but with means imputed	
-		#out_scaled <- data.frame(lapply(out_imputed, function(x) scale(x)))
-		#print(head(out_scaled,20))
+		out_novar <- dplyr::select(no_nas, -dplyr::one_of(vars_no_variance))
+
+		if(debug>=1){message('Preparing dataframe for computation...')}
+
+		if (length(continuous) > 1 & length(categorical) > 1) {
+
+			message("Found categorical and continuous lists of variables! Attempting to use this information... ")
+
+			out_numeric <- data.frame(suppressWarnings(sapply(out_novar, as.numeric)))
+
+			categoricalvars <- suppressWarnings(dplyr::select(out_numeric, dplyr::one_of(categorical)))
+			continuousvars <- suppressWarnings(dplyr::select(out_numeric, dplyr::one_of(continuous)))
+
+			getmode <- function(input) { #from tutorialspoint :D 
+			   uniqv <- unique(input)
+			   uniqv[which.max(tabulate(match(input, uniqv)))]
+			}
+
+			categorical_imputed <- zoo::na.aggregate(categoricalvars, FUN=getmode)
+			continuous_imputed <- zoo::na.aggregate(continuousvars, FUN=mean)
 
 
+			modes <- apply(categorical_imputed, 2, function(x) getmode(x))
+			categorical_deviations <- sweep(categorical_imputed,2, modes, FUN="-")
 
-		if(test == 1) {
-			message('Running in test mode')
-			columnstorun <- subset(out_numeric, select=c('cm4hhinc', 'cf4hhinc', 'cm5adult', 'cm1bsex'))
-			#columnstorun <- out_numeric[,1:4]
+			continuous_deviations <- data.frame(sapply(continuous_imputed, function(x) scale(x, scale = FALSE)))
+
+			deviations <- cbind(continuous_deviations, categorical_deviations)
+
 		} else {
-			columnstorun <- out_numeric
+
+			message("No continuous and categorical lists found. Defaulting to treating all input variables as continuous... ")
+
+			out_numeric <- data.frame(suppressWarnings(sapply(out_novar, as.numeric)))
+			out_imputed <- zoo::na.aggregate(out_numeric)	#same shape as out_numeric, but with means imputed	
+
+			deviations <-  data.frame(sapply(out_imputed, function(x) scale(x, scale = FALSE)))
+
 		}
 
+		deviations <- as.matrix(deviations)
 
-		getCorMatrix <- function(column, input_df) {
-			correlations <- matrix(NA, nrow=ncol(input_df), ncol=1)
-			rownames(correlations) <- colnames(input_df)
-			#find column index of column names passed into function 
-			col <- as.numeric(which(colnames(input_df)==column))
+		if(debug>=1){message('Calculating correlation matrix...')}
 
-			if(debug>=1) { message(paste("running variable", col, column, "...")) }
+		product <- Matrix::crossprod(deviations)
 
-			#for each column in input_df (processed in ways described above, not original input input_df)
-			for (i in 1:ncol(input_df)) {
-
-				#we will try to impute this 
-				var1 <- input_df[,col]
-				#the variable we will correlate with variable we are trying to predict
-				var2 <- input_df[,i]
-				name <- colnames(input_df)[i]
-				#for each remaining variable, make sure its not the same as the column we are predicting 
-				if (!i == col) {
-
-					#print(column, name)
-
-					#error handling -- make sure correlation test can run, otherwise spit out names of offending variables
-					result = tryCatch({
-					    cor <- psych::corFiml(cbind(var1, var2))[1,2]
-					    correlations[name,1] <- abs(cor)
+		x2 <- deviations**2
+		x2sum <- as.matrix(colSums(x2))
+		y2sum <- t(x2sum)
 
 
-					}, error = function(e) {
-					    #complain only if debug is set to 1, otherwise silently move on to next pair 
-					    if(debug>=1) {
-					    message(paste(column, "and", name, "don't seem to play well together"))
-						}
-						correlations[name,1] <- NA
-					})
-			
-				} else {
-					correlations[name,1] <- 1
-				}
-				#end if
-			} #end getCorMatrix 	
-		
-			return(correlations)
-		}
+		product2 <- x2sum%*%y2sum
 
-		#if parallelization option is set 
-		if (parallel == 1) {
-				final <- parallel::mclapply(colnames(columnstorun), function(x) getCorMatrix(x, out_numeric), mc.cores=parallel::detectCores(logical=FALSE))
-				final <- as.matrix(do.call(cbind, final))
-				colnames(final) <- colnames(columnstorun)
-				rownames(final) <- colnames(columnstorun)
-				object <- list(corMatrix = final, df = columnstorun)
-				return(object)
-		#run in sequence = off
-		} else {
-				final <- sapply(colnames(columnstorun), function(x) getCorMatrix(x, out_numeric))
-				final <- as.matrix(final)
-				object <- list(corMatrix = final, df = columnstorun)
-				return(object)
-		}
+		sqrt <- sqrt(product2)
+		output <- product/sqrt
 
+		if(debug>=1){message('Done!')}
+
+		return(round(output,3))
 
 
 	#if we don't find a data frame, throw an error and quit. Boo! 

@@ -5,8 +5,8 @@
 \title{Linear regression and lasso based imputation}
 \usage{
 regImputation(dataframe, matrix, method = "lm", parallel = 0,
-  threshold = 0.4, top_predictors = 3, debug = 0, test = 0,
-  degree = 1)
+  threshold = 0.4, top_predictors = 3, debug = 0, degree = 1,
+  test = 1)
 }
 \arguments{
 \item{method}{method for imputation (\code{"lm"} for ordinary least squares linear regression or \code{"lasso"} for lasso regularization)}
@@ -19,9 +19,9 @@ regImputation(dataframe, matrix, method = "lm", parallel = 0,
 
 \item{debug}{debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress, errors and warnings, 2=progress,errors, warnings and prediction quality.}
 
-\item{test}{test mode; runs on only the first 4 variables; helpful for trying out the function options before running full imputation.}
-
 \item{degree}{the degree of polynomial effects to estimate (1=main effects only, 2=quadratic, 3=cubic, etc.)}
+
+\item{test}{test mode; runs on only the first 4 variables; helpful for trying out the function options before running full imputation.}
 }
 \value{
 Dataframe containing imputed variables, with imputations performed only on missing values and retaining original data where available.
@@ -30,6 +30,6 @@ Dataframe containing imputed variables, with imputations performed only on missi
 Creates a dataframe with imputed values using either linear regression or lasso based models. For each variable in given data frame, the function finds the best correlated predictors (number of which is set by top_predictors), and uses these to construct models for predicting missing values.
 }
 \examples{
-\dontrun{regImputation(dataframe, method='polywog', varpattern="^c[mfhpktfvino]{1,2}[12345]", parallel=1, debug=1, test=1)}
+\dontrun{regImputation(dataframe, matrix, method='polywog', parallel=1, debug=1, test=1)}
 
 }

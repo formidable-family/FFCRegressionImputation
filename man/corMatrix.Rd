@@ -4,24 +4,31 @@
 \alias{corMatrix}
 \title{Correlation matrix to be used for regression based imputatoin}
 \usage{
-corMatrix(dataframe, varpattern = "", debug = 0, test = 0, parallel = 0)
+corMatrix(dataframe = "", continuous = "", categorical = "",
+  varpattern = "", debug = 0, test = 0, parallel = 0)
 }
 \arguments{
-\item{varpattern}{A regular expression for subsetting variable names from input dataframe}
+\item{dataframe}{(Required) An input dataframe you would like a correlation matrix for.}
 
-\item{debug}{debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress notifications, errors and warnings.}
+\item{continuous}{(Optional) A character vector containing variable names that should be treated as continuous.}
 
-\item{test}{test mode; runs on only the first 4 variables of a given dataframe; helpful for trying out the function options before running full correlation matrix.}
+\item{categorical}{(Optional) A character vector containing variable names that should be treated as categorical.}
 
-\item{parallel}{whether to use parallel processes (MacOS only, cores autodetected)}
+\item{varpattern}{A regular expression for subsetting variable names from input dataframe.}
+
+\item{debug}{Debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress notifications, errors and warnings.}
+
+\item{test}{(deprecated)}
+
+\item{parallel}{(deprecated)}
 }
 \value{
-a list of two objects: $corMatrix == the correlation matrix between all variables given in the input dataframe, $df ==  a filtered version of the dataframe, that removes columns with no variance and applies any regex filters given.
+A correlation matrix between all variables given in the input dataframe after removing columns with no variance and applying any regex filters given.
 }
 \description{
 Creates a dataframe with imputed values using either linear regression or lasso based models. For each variable in given data frame, the function finds the best correlated predictors (number of which is set by top_predictors), and uses these to construct models for predicting missing values.
 }
 \examples{
-\dontrun{corMatrix(dataframe, varpattern="^c[mfhpktfvino]{1,2}[12345]", parallel=1, debug=1, test=1)}
+\dontrun{corMatrix(dataframe, varpattern="^c[mfhpktfvino]{1,2}[12345]", debug=1)}
 
 }
