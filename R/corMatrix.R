@@ -2,24 +2,25 @@
 #'
 #' Creates a dataframe with imputed values using either linear regression or lasso based models. For each variable in given data frame, the function finds the best correlated predictors (number of which is set by top_predictors), and uses these to construct models for predicting missing values. 
 #'
-#' @param varpattern A regular expression for subsetting variable names from input dataframe 
+#' @param dataframe (Required) An input dataframe you would like a correlation matrix for. 
+#' @param continuous (Optional) A character vector containing variable names that should be treated as continuous. 
+#' @param categorical (Optional) A character vector containing variable names that should be treated as categorical. 
+#' @param varpattern A regular expression for subsetting variable names from input dataframe. 
 #' @param parallel (deprecated) 
-#' @param debug debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress notifications, errors and warnings.
 #' @param test (deprecated)
+#' @param debug Debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress notifications, errors and warnings.
 #'
-#' @return a list of two objects: $corMatrix == the correlation matrix between all variables given in the input dataframe, $df ==  a filtered version of the dataframe, that removes columns with no variance and applies any regex filters given.
+#' @return A correlation matrix between all variables given in the input dataframe after removing columns with no variance and applying any regex filters given.
 #'
 #' @examples
 #' \dontrun{corMatrix(dataframe, varpattern="^c[mfhpktfvino]{1,2}[12345]", debug=1)}
 #'
 #' @export
 
-# Todo: better case logic instead of multiple if statements. 
-
 
 ## Main imputation script
 
-corMatrix <- function(dataframe, varpattern="",debug=0, test=1, parallel=0) {
+corMatrix <- function(dataframe='', continuous='', categorical='', varpattern="",debug=0, test=0, parallel=0) {
 
 	##
 	## Two helper functions by @ccgilroy. Todo: depend on the rest of his code. 
@@ -36,6 +37,7 @@ corMatrix <- function(dataframe, varpattern="",debug=0, test=1, parallel=0) {
 	                          numeric(1))
 	  names(variance_info[which(variance_info <= variance_threshold)])
 	}
+
 
 	if (test ==1) {
 		message('Test mode is now deprecated because of significantly improved run-time. Operations will be performed on entire input dataframe.')
@@ -82,10 +84,43 @@ corMatrix <- function(dataframe, varpattern="",debug=0, test=1, parallel=0) {
 		out_novar <- dplyr::select(no_nas, -dplyr::one_of(vars_no_variance))
 
 		if(debug>=1){message('Preparing dataframe for computation...')}
-		out_numeric <- data.frame(suppressWarnings(sapply(out_novar, as.numeric)))
-		out_imputed <- zoo::na.aggregate(out_numeric)	#same shape as out_numeric, but with means imputed	
 
-		deviations <-  data.frame(sapply(out_imputed, function(x) scale(x, scale = FALSE)))
+		if (length(continuous) > 1 & length(categorical) > 1) {
+
+			message("Found categorical and continuous lists of variables! Attempting to use this information... ")
+
+			out_numeric <- data.frame(suppressWarnings(sapply(out_novar, as.numeric)))
+
+			categoricalvars <- suppressWarnings(dplyr::select(out_numeric, dplyr::one_of(categorical)))
+			continuousvars <- suppressWarnings(dplyr::select(out_numeric, dplyr::one_of(continuous)))
+
+			getmode <- function(input) { #from tutorialspoint :D 
+			   uniqv <- unique(input)
+			   uniqv[which.max(tabulate(match(input, uniqv)))]
+			}
+
+			categorical_imputed <- zoo::na.aggregate(categoricalvars, FUN=getmode)
+			continuous_imputed <- zoo::na.aggregate(continuousvars, FUN=mean)
+
+
+			modes <- apply(categorical_imputed, 2, function(x) getmode(x))
+			categorical_deviations <- sweep(categorical_imputed,2, modes, FUN="-")
+
+			continuous_deviations <- data.frame(sapply(continuous_imputed, function(x) scale(x, scale = FALSE)))
+
+			deviations <- cbind(continuous_deviations, categorical_deviations)
+
+		} else {
+
+			message("No continuous and categorical lists found. Defaulting to treating all input variables as continuous... ")
+
+			out_numeric <- data.frame(suppressWarnings(sapply(out_novar, as.numeric)))
+			out_imputed <- zoo::na.aggregate(out_numeric)	#same shape as out_numeric, but with means imputed	
+
+			deviations <-  data.frame(sapply(out_imputed, function(x) scale(x, scale = FALSE)))
+
+		}
+
 		deviations <- as.matrix(deviations)
 
 		if(debug>=1){message('Calculating correlation matrix...')}

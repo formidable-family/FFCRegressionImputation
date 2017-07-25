@@ -13,11 +13,9 @@
 #' @return Dataframe containing imputed variables, with imputations performed only on missing values and retaining original data where available.
 #'
 #' @examples
-#' \dontrun{regImputation(dataframe, method='polywog', varpattern="^c[mfhpktfvino]{1,2}[12345]", parallel=1, debug=1, test=1)}
+#' \dontrun{regImputation(dataframe, matrix, method='polywog', parallel=1, debug=1, test=1)}
 #'
 #' @export
-
-# Todo: better case logic instead of multiple if statements. 
 
 
 ## Main imputation script
@@ -105,7 +103,7 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 						}
 
 						prediction <- stats::predict(model_fit, imputed_df , type='response')
-						prediction_unscaled <- prediction * sd(original_df[,col], na.rm=TRUE) + mean(original_df[,col], na.rm=TRUE)
+						prediction_unscaled <- prediction * stats::sd(original_df[,col], na.rm=TRUE) + mean(original_df[,col], na.rm=TRUE)
 						#print(head(prediction_unscaled, 20))
 						imputed <- ifelse(is.na(original_df[,col]), prediction_unscaled, original_df[,col])
 
@@ -140,7 +138,7 @@ regImputation <- function(dataframe, matrix, method='lm', parallel=0, threshold=
 						#print(summary(model_fit))	
 						#new[,column] <- data.frame(rep(0, nrow(imputed_df)))
 						prediction <- stats::predict(lm_fit, imputed_df, type='response')
-						prediction_unscaled <- prediction * sd(original_df[,col], na.rm=TRUE) + mean(original_df[,col], na.rm=TRUE)
+						prediction_unscaled <- prediction * stats::sd(original_df[,col], na.rm=TRUE) + mean(original_df[,col], na.rm=TRUE)
 						imputed <- ifelse(is.na(original_df[,col]), prediction_unscaled, original_df[,col])
 
 						if(debug>1) { 
