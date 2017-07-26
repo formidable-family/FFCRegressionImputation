@@ -13,7 +13,7 @@
 #' @return A correlation matrix between all variables given in the input dataframe after removing columns with no variance and applying any regex filters given.
 #'
 #' @examples
-#' \dontrun{corMatrix(dataframe, varpattern="^c[mfhpktfvino]{1,2}[12345]", debug=1)}
+#' \dontrun{corMatrix(dataframe, debug=1)}
 #'
 #' @export
 

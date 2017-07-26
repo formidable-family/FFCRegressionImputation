@@ -4,9 +4,9 @@
 \alias{regImputation}
 \title{Linear regression and lasso based imputation}
 \usage{
-regImputation(dataframe, matrix, method = "lm", parallel = 0,
-  threshold = 0.4, top_predictors = 3, debug = 0, degree = 1,
-  test = 1)
+regImputation(dataframe, matrix, continuous = "", categorical = "",
+  method = "lm", parallel = 0, threshold = 0.4, top_predictors = 3,
+  debug = 0, degree = 1, test = 1)
 }
 \arguments{
 \item{method}{method for imputation (\code{"lm"} for ordinary least squares linear regression or \code{"lasso"} for lasso regularization)}

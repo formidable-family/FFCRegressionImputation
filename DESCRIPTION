@@ -5,7 +5,7 @@ Authors@R: person("Anna", "Filippova", email = "annafil@gmail.com", role = c("au
 Description: This package provides helper functions for performing data imputation for the Fragile Families Challenge panel dataset. Requires access to the FFC dataset. Function will take raw dataset, convert -9s and other missing value characters to NAs, make some logical imputations (such as filling in missing age based on existing age information in other waves), impute means, and then use either linear regressions or lasso to predict missing values. You will end up with a dataframe of imputed values (either constructed only or the full data frame, depending on the options you specify), where an original value is missing, and original (unmodified) values where they exist. For example, if the dataset is missing data in the first case in househost income from mom's survey in wave 4 (cm4hhinc), but not cases 2 and 3, the function will only impute the first case, and return the original values for cases 2 and 3.
 Depends: R (>= 3.3.1)
 Imports: dplyr, psych, stringr,zoo
-Suggests: parallel, polywog
+Suggests: parallel, polywog, nnet
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true
