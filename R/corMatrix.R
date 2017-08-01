@@ -89,6 +89,8 @@ corMatrix <- function(dataframe='', continuous='', categorical='', varpattern=""
 
 			message("Found categorical and continuous lists of variables! Attempting to use this information... ")
 
+			if(debug>=1){message('Preparing dataframe for computation [1]...')}
+
 			out_numeric <- data.frame(suppressWarnings(sapply(out_novar, as.numeric)))
 
 			categoricalvars <- suppressWarnings(dplyr::select(out_numeric, dplyr::one_of(categorical)))
@@ -99,9 +101,13 @@ corMatrix <- function(dataframe='', continuous='', categorical='', varpattern=""
 			   uniqv[which.max(tabulate(match(input, uniqv)))]
 			}
 
+			if(debug>=1){message('Preparing dataframe for computation [2]...')}
+
 			categorical_imputed <- zoo::na.aggregate(categoricalvars, FUN=getmode)
 			continuous_imputed <- zoo::na.aggregate(continuousvars, FUN=mean)
 
+
+			if(debug>=1){message('Preparing dataframe for computation [3]...')}
 
 			modes <- apply(categorical_imputed, 2, function(x) getmode(x))
 			categorical_deviations <- sweep(categorical_imputed,2, modes, FUN="-")
@@ -114,8 +120,14 @@ corMatrix <- function(dataframe='', continuous='', categorical='', varpattern=""
 
 			message("No continuous and categorical lists found. Defaulting to treating all input variables as continuous... ")
 
+			if(debug>=1){message('Preparing dataframe for computation [1]...')}
+
 			out_numeric <- data.frame(suppressWarnings(sapply(out_novar, as.numeric)))
+
+			if(debug>=1){message('Preparing dataframe for computation [2]...')}
+
 			out_imputed <- zoo::na.aggregate(out_numeric)	#same shape as out_numeric, but with means imputed	
+			if(debug>=1){message('Preparing dataframe for computation [3]...')}
 
 			deviations <-  data.frame(sapply(out_imputed, function(x) scale(x, scale = FALSE)))
 
