@@ -4,9 +4,9 @@
 \alias{regImputation}
 \title{Linear regression and lasso based imputation}
 \usage{
-regImputation(dataframe, matrix, method = "lm", parallel = 0,
-  threshold = 0.4, top_predictors = 3, debug = 0, degree = 1,
-  test = 1)
+regImputation(dataframe, matrix, continuous = "", categorical = "",
+  method = "lm", parallel = 0, threshold = 0.4, top_predictors = 3,
+  debug = 0, degree = 1, test = 0, failmode = "skip")
 }
 \arguments{
 \item{method}{method for imputation (\code{"lm"} for ordinary least squares linear regression or \code{"lasso"} for lasso regularization)}
@@ -22,6 +22,8 @@ regImputation(dataframe, matrix, method = "lm", parallel = 0,
 \item{degree}{the degree of polynomial effects to estimate (1=main effects only, 2=quadratic, 3=cubic, etc.)}
 
 \item{test}{test mode; runs on only the first 4 variables; helpful for trying out the function options before running full imputation.}
+
+\item{failmode}{what to do if prediction fails for any reason. Defaults to returning the original variable vector (failmode='skip'), but can be told to impute central tendency instead with option (failmode='impute')}
 }
 \value{
 Dataframe containing imputed variables, with imputations performed only on missing values and retaining original data where available.

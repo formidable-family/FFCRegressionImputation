@@ -29,6 +29,6 @@ A correlation matrix between all variables given in the input dataframe after re
 Creates a dataframe with imputed values using either linear regression or lasso based models. For each variable in given data frame, the function finds the best correlated predictors (number of which is set by top_predictors), and uses these to construct models for predicting missing values.
 }
 \examples{
-\dontrun{corMatrix(dataframe, varpattern="^c[mfhpktfvino]{1,2}[12345]", debug=1)}
+\dontrun{corMatrix(dataframe, debug=1)}
 
 }
