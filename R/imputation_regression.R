@@ -1,6 +1,6 @@
 #' Linear regression and lasso based imputation
 #'
-#' Creates a dataframe with imputed values using either linear regression or lasso based models. For each variable in given data frame, the function finds the best correlated predictors (number of which is set by top_predictors), and uses these to construct models for predicting missing values. 
+#' Creates a dataframe with imputed values using either linear regression or lasso based models. For each variable in given data frame, the function finds the best correlated predictors (number of which is set by top_predictors), and uses these to construct models for predicting missing values.
 #'
 #' @param method method for imputation (\code{"lm"} for ordinary least squares linear regression or \code{"lasso"} for lasso regularization)
 #' @param degree the degree of polynomial effects to estimate (1=main effects only, 2=quadratic, 3=cubic, etc.)
@@ -8,8 +8,9 @@
 #' @param threshold for selection of predictors based on correlation; values between 0 and 1.
 #' @param top_predictors how many predictors to use in imputation prediction; more values can lead to better quality but more sparsely available predictions.
 #' @param debug debug mode; shows which models are running, the quality of predictions relative to original data, and any model errors. 1=progress, errors and warnings, 2=progress,errors, warnings and prediction quality.
-#' @param test test mode; runs on only the first 4 variables; helpful for trying out the function options before running full imputation. 
+#' @param test test mode; runs on only the first 4 variables; helpful for trying out the function options before running full imputation.
 #' @param failmode what to do if prediction fails for any reason. Defaults to returning the original variable vector (failmode='skip'), but can be told to impute central tendency instead with option (failmode='impute')
+#' @param ncores number of cores for when running in parallel. Defaults to all available cores.
 #'
 #' @return Dataframe containing imputed variables, with imputations performed only on missing values and retaining original data where available.
 #'
@@ -21,7 +22,7 @@
 
 ## Main imputation script
 
-regImputation <- function(dataframe, matrix, continuous='', categorical='', method='lm', parallel=0, threshold=0.4,top_predictors=3, debug=0, degree=1, test=0, failmode='skip') {
+regImputation <- function(dataframe, matrix, continuous='', categorical='', method='lm', parallel=0, threshold=0.4,top_predictors=3, debug=0, degree=1, test=0, failmode='skip', ncores=parallel::detectCores(logical=FALSE)) {
 
 	#avoid loading everything under the sun if we don't need it
 	if (method == 'polywog' | method=='lasso') {
@@ -59,7 +60,7 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 		}
 	}
 
-	
+
 	#just grabs name of this file to be able to display in error messages
 	this.file <- (function() utils::getSrcFilename(sys.call(sys.nframe())))()
 
@@ -74,7 +75,7 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 		})
 
 
-	
+
 		if (length(continuous) > 1 & length(categorical) > 1) {
 
 			message("Found categorical and continuous lists of variables! Attempting to use this information... ")
@@ -84,17 +85,17 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 			if(debug>=1){message('Preparing dataframe for computation [1]...')}
 			categorical_numeric <- data.frame(suppressWarnings(sapply(categoricalvars, as.numeric)))
 			continuous_numeric <- data.frame(suppressWarnings(sapply(continuousvars, as.numeric)))
-			
+
 			out_numeric <- cbind(categorical_numeric , continuous_numeric)
-			
+
 			if(debug>=1){message('Preparing dataframe for computation [2]...')}
 
-			getmode <- function(input) { #from tutorialspoint :D 
+			getmode <- function(input) { #from tutorialspoint :D
 			   uniqv <- unique(input)
 			   uniqv[which.max(tabulate(match(input, uniqv)))]
 			}
 
-			#turn categorical into factor levels 
+			#turn categorical into factor levels
 			categorical_imputed <- zoo::na.aggregate(categorical_numeric, FUN=getmode)
 			categorical_imputed <- Map(as.factor, categorical_imputed)
 
@@ -106,7 +107,7 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 			#saveRDS(out_imputed, 'out_imputed.rds')
 
 			if(debug>=1){message('Preparing dataframe for computation [3]...')}
-			#we scale only continuous variables 
+			#we scale only continuous variables
 			continuous_scaled <- data.frame(sapply(continuous_imputed, function(x) scale(x)))
 
 			out_scaled <- cbind(categorical_imputed, continuous_scaled)
@@ -118,7 +119,7 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 			if(debug>=1){message('Preparing dataframe for computation [2]...')}
 
 			out_imputed <- zoo::na.aggregate(out_numeric)	#same shape as dataframe, but with means imputed
-			
+
 			if(debug>=1){message('Preparing dataframe for computation [3]...')}
 			out_scaled <- data.frame(sapply(out_imputed, function(x) scale(x)))
 
@@ -156,8 +157,8 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 				#print(formula)
 
 				#print(top_values$names)
-				
-				#wrap in error handling 
+
+				#wrap in error handling
 				result = tryCatch({
 
 					#if polywog flag is set
@@ -188,7 +189,7 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 							newx <- dummies::dummy.data.frame(newx,sep=".")
 							newx <- as.matrix(newx)
 
-							if(debug>1) { 
+							if(debug>1) {
 								message(paste("Glmnet lambda value used", formula))
 								print(model_fit$lambda.min)
 							}
@@ -202,13 +203,13 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 
 							imputed <- ifelse(is.na(original_df[,col]), prediction, original_df[,col])
 							return(imputed)
-							
+
 						} else {
 							print("Using polywog")
-						
+
 
 							model_fit <- polywog::polywog(model, data=imputed_df, degree = degree)
-							if(debug>1) { 
+							if(debug>1) {
 								message(paste("Polywog lambda value used", formula))
 								print(model_fit$lambda)
 							}
@@ -219,12 +220,12 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 							#print(head(prediction_unscaled, 20))
 							imputed <- ifelse(is.na(original_df[,col]), prediction_unscaled, original_df[,col])
 
-							if(debug>1) { 
-								#print information about our model quality and the model itself 
+							if(debug>1) {
+								#print information about our model quality and the model itself
 								message(paste("Prediction quality for model:", formula))
 								print(stats::cor.test(original_df[,col],prediction)$estimate)
 							}
-							#try to return some prediction 
+							#try to return some prediction
 							#return(prediction)
 							return(imputed)
 
@@ -237,7 +238,7 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 						#print(lavaan_fit)
 						#prediction <- lavPredict(lavaan_fit, type='lv',newdata=imputed_df, type='yhat')
 						#print(head(prediction))
-						#try to return some prediction 
+						#try to return some prediction
 						#return(prediction)
 
 					#default to lm - fastest
@@ -259,14 +260,14 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 
 						if (column %in% categorical) {
 							#print("Running multinomial regression")
-							lm_fit <- nnet::multinom(model, data=df.train)	
+							lm_fit <- nnet::multinom(model, data=df.train)
 						} else {
 							#print("Running linear regression")
-							lm_fit <- stats::lm(model, data=df.train)	
+							lm_fit <- stats::lm(model, data=df.train)
 						}
 
 						if(debug>1) {
-							if (column %in% categorical) { 
+							if (column %in% categorical) {
 								message(paste("Model fit (AIC):", formula))
 								print(lm_fit$AIC)
 							} else {
@@ -278,15 +279,15 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 						if (column %in% categorical) {
 							prediction <- predict(lm_fit, temp_df, type='c')
 
-							if(debug>1) { 
-								#print information about our model quality and the model itself 
+							if(debug>1) {
+								#print information about our model quality and the model itself
 								message(paste("Prediction quality for model:", formula))
 								print(stats::cor.test(original_df[,col],as.numeric(prediction))$estimate)
 							}
 
 							imputed <- ifelse(is.na(original_df[,col]), prediction, original_df[,col])
 							#print(head(imputed))
-							#try to return some prediction 
+							#try to return some prediction
 							return(imputed)
 
 						} else {
@@ -295,13 +296,13 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 							imputed <- ifelse(is.na(original_df[,col]), prediction_unscaled, original_df[,col])
 							#print(head(imputed))
 
-							if(debug>1) { 
-								#print information about our model quality and the model itself 
+							if(debug>1) {
+								#print information about our model quality and the model itself
 								message(paste("Prediction quality for model:", formula))
 								print(stats::cor.test(original_df[,col],prediction_unscaled)$estimate)
 							}
 
-							#try to return some prediction 
+							#try to return some prediction
 							return(imputed)
 						}
 
@@ -310,11 +311,11 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 
 				#if we can't get the model we want to run, throw an error and return column of NAs
 				}, error = function(e) {
-				    if(debug>=1) { 
-				    	message(paste("Error in model", formula)) 
+				    if(debug>=1) {
+				    	message(paste("Error in model", formula))
 					}
 
-					if (failmode == "impute") { 
+					if (failmode == "impute") {
 
 						if (column %in% categorical) {
 							prediction_unscaled <- imputed_df[,col]
@@ -323,7 +324,7 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 
 							prediction <- imputed_df[,col]
 							prediction_unscaled <- prediction * stats::sd(original_df[,col], na.rm=TRUE) + mean(original_df[,col], na.rm=TRUE)
-							
+
 						}
 
 						imputed <- ifelse(is.na(original_df[,col]), prediction_unscaled, original_df[,col]) #return imputation with median or mode
@@ -341,7 +342,7 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 
 
 
-			#if we have no good predictors, also return a column of NAs and throw an error if debug is on			
+			#if we have no good predictors, also return a column of NAs and throw an error if debug is on
 			} else {
 				if(debug>=1) { message(paste("No predictors for variable", column)) }
 
@@ -354,7 +355,7 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 
 						prediction <- imputed_df[,col]
 						prediction_unscaled <- prediction * stats::sd(original_df[,col], na.rm=TRUE) + mean(original_df[,col], na.rm=TRUE)
-						
+
 					}
 
 					imputed <- ifelse(is.na(original_df[,col]), prediction_unscaled, original_df[,col]) #return imputation with median or mode
@@ -369,7 +370,7 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 					return(unimputed)
 
 				}
-				
+
 
 			}
 		} # end of impute function
@@ -379,10 +380,10 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 		} else {
 			colstorun <- out_scaled
 		}
-		#if parallelization option is set 
+		#if parallelization option is set
 		if (parallel == 1) {
-				final <- parallel::mclapply(colnames(colstorun), function(x) impute(x, matrix, out_scaled, out_numeric), mc.cores=parallel::detectCores(logical=FALSE))
-				if(debug>=1) { message("Assembling predictions...") } 
+				final <- parallel::mclapply(colnames(colstorun), function(x) impute(x, matrix, out_scaled, out_numeric), mc.cores=ncores)
+				if(debug>=1) { message("Assembling predictions...") }
 				final <- data.frame(do.call(cbind, final))
 				colnames(final) <- colnames(colstorun)
 				return(final)
@@ -393,9 +394,9 @@ regImputation <- function(dataframe, matrix, continuous='', categorical='', meth
 				return(final)
 		}
 
-	#if we don't find a data frame, throw an error and quit. Boo! 
+	#if we don't find a data frame, throw an error and quit. Boo!
 	} else {
 		stop(paste("Error: function in file", this.file, "expects a data frame as first input, and matrix of correlatons of first df variables as second input"))
 	}
 
-} # end regression_imputation function 
+} # end regression_imputation function
